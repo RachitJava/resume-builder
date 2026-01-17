@@ -1,0 +1,227 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import resumeApi from '../api/resumeApi';
+import ResumeUpload from '../components/ResumeUpload';
+import ProfessionalSamples from '../components/ProfessionalSamples';
+
+export default function Home() {
+  const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('samples');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    loadResumes();
+  }, []);
+
+  const loadResumes = async () => {
+    try {
+      const data = await resumeApi.getAll();
+      setResumes(data);
+    } catch (error) {
+      console.error('Failed to load resumes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this resume?')) {
+      try {
+        await resumeApi.delete(id);
+        setResumes(resumes.filter(r => r.id !== id));
+      } catch (error) {
+        console.error('Failed to delete:', error);
+      }
+    }
+  };
+
+  const handleExport = async (id, template, e) => {
+    e.stopPropagation();
+    try {
+      await resumeApi.exportPdf(id, template);
+    } catch (error) {
+      console.error('Failed to export:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="text-center space-y-4 py-6">
+        <h1 className="font-display text-4xl md:text-5xl font-bold text-ink-100">
+          Build Your <span className="text-accent">Perfect Resume</span>
+        </h1>
+        <p className="text-ink-400 text-lg max-w-2xl mx-auto">
+          Upload your existing resume, use professional templates, or start from scratch. 
+          Our AI helps you create ATS-friendly resumes in minutes.
+        </p>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Upload Resume */}
+        <div className="md:col-span-2">
+          <ResumeUpload />
+        </div>
+
+        {/* Quick Links */}
+        <div className="space-y-4">
+          <Link
+            to="/templates"
+            className="block p-5 bg-gradient-to-br from-accent/10 to-purple-500/10 border border-accent/20 rounded-xl hover:border-accent/40 transition-smooth group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center group-hover:bg-accent/30 transition-smooth">
+                <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-ink-100">Browse Templates</h3>
+                <p className="text-sm text-ink-400">11 designs, country-specific</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            to="/editor"
+            className="block p-5 bg-ink-900/50 border border-ink-800 rounded-xl hover:border-ink-700 transition-smooth group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-ink-800 flex items-center justify-center group-hover:bg-ink-700 transition-smooth">
+                <svg className="w-6 h-6 text-ink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-ink-100">Start from Scratch</h3>
+                <p className="text-sm text-ink-400">Create a blank resume</p>
+              </div>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Tabs: Samples / My Resumes */}
+      <div className="border-b border-ink-800">
+        <div className="flex gap-8">
+          <button
+            onClick={() => setActiveTab('samples')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-smooth ${
+              activeTab === 'samples'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-400 hover:text-ink-200'
+            }`}
+          >
+            Professional Samples
+          </button>
+          <button
+            onClick={() => setActiveTab('myresumes')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-smooth ${
+              activeTab === 'myresumes'
+                ? 'border-accent text-accent'
+                : 'border-transparent text-ink-400 hover:text-ink-200'
+            }`}
+          >
+            My Resumes ({resumes.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'samples' ? (
+        <ProfessionalSamples />
+      ) : (
+        <>
+          {resumes.length === 0 ? (
+            <div className="text-center py-16 space-y-6">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-ink-800/50 flex items-center justify-center">
+                <svg className="w-10 h-10 text-ink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-medium text-ink-200">No resumes yet</h3>
+                <p className="text-ink-500">Upload a resume or use a professional sample to get started</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {resumes.map((resume) => (
+                <div
+                  key={resume.id}
+                  onClick={() => navigate(`/editor/${resume.id}`)}
+                  className="group bg-ink-900/50 border border-ink-800 rounded-xl p-5 cursor-pointer 
+                             hover:border-ink-700 hover:bg-ink-900/80 transition-smooth"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <span className="text-accent font-display font-bold text-lg">
+                        {resume.fullName?.charAt(0) || '?'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
+                      <button
+                        onClick={(e) => handleExport(resume.id, resume.template, e)}
+                        className="p-2 rounded-lg hover:bg-ink-800 text-ink-400 hover:text-accent"
+                        title="Export PDF"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={(e) => handleDelete(resume.id, e)}
+                        className="p-2 rounded-lg hover:bg-red-500/10 text-ink-400 hover:text-red-400"
+                        title="Delete"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <h3 className="font-semibold text-ink-100 mb-1 truncate">{resume.fullName}</h3>
+                  <p className="text-sm text-ink-500 truncate">{resume.email || 'No email'}</p>
+                  
+                  {resume.skills?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-4">
+                      {resume.skills.slice(0, 3).map((skill, i) => (
+                        <span key={i} className="text-xs px-2 py-1 rounded-md bg-ink-800 text-ink-400">
+                          {skill}
+                        </span>
+                      ))}
+                      {resume.skills.length > 3 && (
+                        <span className="text-xs px-2 py-1 text-ink-500">
+                          +{resume.skills.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-ink-800">
+                    <span className="text-xs text-ink-600 capitalize">{resume.template} template</span>
+                    <span className="text-xs text-ink-600">
+                      {resume.experience?.length || 0} exp • {resume.education?.length || 0} edu
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

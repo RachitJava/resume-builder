@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #18181b 100%);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #41414a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5d5d6b;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Input styles */
+input, textarea, select {
+  @apply bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-ink-100 
+         placeholder-ink-500 focus:outline-none focus:border-accent focus:ring-1 
+         focus:ring-accent/20 transition-smooth;
+}
+
+input:hover, textarea:hover, select:hover {
+  @apply border-ink-600;
+}
+
+/* Button base */
+.btn {
+  @apply px-5 py-2.5 rounded-lg font-medium transition-smooth 
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-ink-950;
+}
+
+.btn-primary {
+  @apply bg-accent text-white hover:bg-accent-hover focus:ring-accent;
+}
+
+.btn-secondary {
+  @apply bg-ink-800 text-ink-200 border border-ink-700 hover:bg-ink-700 
+         hover:border-ink-600 focus:ring-ink-500;
+}
+
+.btn-ghost {
+  @apply text-ink-400 hover:text-ink-200 hover:bg-ink-800/50;
+}
+
