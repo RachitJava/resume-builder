@@ -74,6 +74,22 @@ export default function Editor() {
     }
   }, [id, location.state]);
 
+  // Auto-save effect
+  useEffect(() => {
+    if (!id || !resume.fullName) return; // Only auto-save if editing existing resume with name
+
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        await resumeApi.update(id, resume);
+        console.log('✅ Auto-saved');
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    }, 3000); // Auto-save 3 seconds after last change
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [resume, id]);
+
   const loadResume = async (resumeId) => {
     try {
       const data = await resumeApi.getById(resumeId);
@@ -118,8 +134,14 @@ export default function Editor() {
     if (!savedResume) return;
 
     try {
-      // Use backend PDF generation
-      await resumeApi.exportPdf(savedResume.id, savedResume.template);
+      // Use client-side PDF generation for exact preview match
+      const previewElement = previewRef.current;
+      if (!previewElement) {
+        alert('Preview not loaded');
+        return;
+      }
+
+      await resumeApi.exportPdfFromPreview(previewElement, `${savedResume.fullName || 'resume'}.pdf`);
     } catch (error) {
       console.error('Failed to export PDF:', error);
       alert(`Failed to download PDF: ${error.message || 'Unknown error'}. Please try again.`);
