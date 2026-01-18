@@ -31,6 +31,7 @@ export default function Editor() {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('form');
+  const [enableCompression, setEnableCompression] = useState(false);
   const previewRef = useRef(null);
 
   const sanitizeResume = (data) => {
@@ -175,7 +176,24 @@ export default function Editor() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 ml-auto">
-          <div className="hidden sm:block">
+          <div className="hidden sm:flex items-center gap-3">
+            <button
+              onClick={() => setEnableCompression(!enableCompression)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${enableCompression
+                  ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400'
+                }`}
+              title={enableCompression ? "Disable auto-fit" : "Fit content to one page"}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {enableCompression ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 4l-5 5M4 16v4m0 0h4M4 20l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 3v3a2 2 0 01-2 2H3m18 0h-3a2 2 0 01-2-2V3m0 18v-3a2 2 0 012-2h3M3 16h3a2 2 0 012 2v3" />
+                )}
+              </svg>
+              Fit to 1 Page
+            </button>
             <TemplateSelector
               value={resume.template}
               onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
@@ -257,7 +275,7 @@ export default function Editor() {
           {/* Preview Section */}
           <div className={`${activeTab === 'preview' ? 'block' : 'hidden'} lg:block lg:sticky lg:top-24 space-y-6 invisible-scrollbar`}>
             <div ref={previewRef} className="shadow-lg rounded-lg overflow-hidden bg-white">
-              <ResumePreview resume={resume} />
+              <ResumePreview resume={resume} enableCompression={enableCompression} />
             </div>
             {/* AI Optimizer removed from here, moving to Modal */}
           </div>
