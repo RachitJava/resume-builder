@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 
-export default function ResumePreview({ resume, enableCompression = false }) {
+export default function ResumePreview({ resume, enableCompression = true }) {
   const previewRef = useRef(null);
   const [exceedsOnePage, setExceedsOnePage] = useState(false);
   const [compressionLevel, setCompressionLevel] = useState(0);
