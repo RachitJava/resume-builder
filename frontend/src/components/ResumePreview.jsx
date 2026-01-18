@@ -4,6 +4,34 @@ export default function ResumePreview({ resume, enableCompression = false }) {
   const previewRef = useRef(null);
   const [exceedsOnePage, setExceedsOnePage] = useState(false);
   const [compressionLevel, setCompressionLevel] = useState(0);
+  const [scale, setScale] = useState(1);
+
+  // Handle mobile scaling to fit screen
+  useEffect(() => {
+    const updateScale = () => {
+      if (!previewRef.current) return;
+      const parent = previewRef.current.parentElement;
+      if (parent) {
+        const availableWidth = parent.clientWidth; // Use clientWidth to exclude scrollbar
+        // Minimal padding for aesthetics (32px total = 16px each side)
+        const maxWidth = availableWidth - 24;
+        const baseWidth = 794; // A4 standard width
+
+        if (maxWidth < baseWidth) {
+          setScale(maxWidth / baseWidth);
+        } else {
+          setScale(1);
+        }
+      }
+    };
+
+    window.addEventListener('resize', updateScale);
+    // Initial calculation with small delay to ensure DOM is ready
+    setTimeout(updateScale, 0);
+    setTimeout(updateScale, 100);
+
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   const templates = {
     modern: ModernTemplate,
@@ -129,12 +157,15 @@ export default function ResumePreview({ resume, enableCompression = false }) {
         <div
           id="resume-preview-content"
           ref={previewRef}
-          className="resume-page resume-auto-fit"
+          className="resume-page resume-auto-fit origin-top-left"
           style={{
-            width: '100%',
-            maxWidth: '794px',
+            // Scale to fit mobile screens
+            transform: `scale(${scale})`,
+            width: '794px', // Force standard A4 width for correct layout
             minHeight: '1123px',
             margin: '0 auto',
+            marginBottom: scale < 1 ? `-${1123 * (1 - scale) * 0.8}px` : '0', // Reduce most whitespace but keep safe buffer
+
             // Apply default padding if not compressing, otherwise use compression styles
             padding: shouldCompress && compressionLevel > 0 ? styles.padding : '32px',
             // Only apply other compression styles if actually compressing
