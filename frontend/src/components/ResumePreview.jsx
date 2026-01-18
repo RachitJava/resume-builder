@@ -514,7 +514,7 @@ export function MinimalTemplate({ resume }) {
 export function ExecutiveTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
-      <header className="bg-slate-800 text-white p-8 -m-8 mb-8 rounded-none">
+      <header className="bg-slate-800 text-white p-10 -m-10 mb-8 rounded-none">
         <h1 className="text-2xl font-bold tracking-wide mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
@@ -602,7 +602,7 @@ export function ExecutiveTemplate({ resume }) {
 export function CreativeTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
-      <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-8 -m-8 mb-8 rounded-none">
+      <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-10 -m-10 mb-8 rounded-none">
         <h1 className="text-3xl font-black mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
@@ -1134,7 +1134,7 @@ export function TwoColumnTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 flex gap-6 min-h-full">
       {/* Sidebar */}
-      <div className="w-1/3 bg-gray-900 text-white p-4 -ml-8 -my-8 min-h-full">
+      <div className="w-1/3 bg-gray-900 text-white p-6 -ml-10 -my-10 min-h-full">
         <div className="mb-6">
           <div className="w-16 h-16 bg-gray-700 flex items-center justify-center text-2xl font-bold mb-3">
             {resume.fullName?.charAt(0) || '?'}
@@ -1221,9 +1221,9 @@ export function TwoColumnTemplate({ resume }) {
 // ============================================================
 export function DeveloperTemplate({ resume }) {
   return (
-    <div className="font-mono text-sm text-gray-800 bg-gray-50 p-4 -m-8 min-h-full">
+    <div className="font-mono text-sm text-gray-800 bg-gray-50 p-6 -m-10 min-h-full">
       {/* Terminal-style header */}
-      <div className="bg-gray-900 text-green-400 p-6 -mx-4 -mt-4 mb-6">
+      <div className="bg-gray-900 text-green-400 p-6 -mx-6 -mt-6 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
           <span className="w-3 h-3 rounded-full bg-gray-500"></span>
