@@ -1,15 +1,23 @@
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 
 const getBaseUrl = () => {
-    if (import.meta.env.PROD) {
-        return import.meta.env.VITE_API_BASE_URL || 'https://resume-builder-app-misty-waterfall-5852.fly.dev';
+    // Always use full URL for Capacitor (mobile) or production builds
+    if (Capacitor.isNativePlatform() || import.meta.env.PROD) {
+        const url = import.meta.env.VITE_API_BASE_URL || 'https://resume-builder-app-misty-waterfall-5852.fly.dev';
+        console.log('🌐 Using backend URL:', url);
+        return url;
     }
+    // Development mode - use relative URLs (proxy)
+    console.log('🌐 Using relative URLs (dev mode)');
     return '';
 };
 
 export const API_BASE_URL = getBaseUrl();
 
 console.log('🌐 API Configuration:', {
+    isNative: Capacitor.isNativePlatform(),
+    platform: Capacitor.getPlatform(),
     mode: import.meta.env.MODE,
     prod: import.meta.env.PROD,
     baseURL: API_BASE_URL,
