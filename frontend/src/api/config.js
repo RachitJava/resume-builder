@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
     if (import.meta.env.PROD) {
-        return import.meta.env.VITE_API_BASE_URL || '';
+        return import.meta.env.VITE_API_BASE_URL || 'https://resume-builder-app-misty-waterfall-5852.fly.dev';
     }
     return '';
 };

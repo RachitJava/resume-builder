@@ -37,6 +37,8 @@ jobs:
         run: |
           cd frontend
           npm run build
+        env:
+          VITE_API_BASE_URL: https://resume-builder-app-misty-waterfall-5852.fly.dev
 
       - name: Capacitor Sync 🔄
         run: |
