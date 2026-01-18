@@ -1,5 +1,4 @@
 import api from './config';
-import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 
@@ -35,72 +34,83 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation
+  // Client-side PDF generation using native print for exact preview match
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
-    const element = previewElement.cloneNode(true);
-    // ... (rest of the logic remains the same)
-    // I'll keep the logic I saw in the previous view_file
-    const notifications = element.querySelectorAll('[class*="bg-amber"], [class*="bg-red"], [class*="bg-green"], [class*="bg-blue"], [class*="bg-gray-500"]');
-    notifications.forEach(notif => {
-      const text = notif.textContent || '';
-      if (text.includes('exceeds') || text.includes('Auto-adjusted') || text.includes('compression') ||
-        text.includes('pages') || text.includes('pre-optimized') || text.includes('Template is')) {
-        notif.remove();
-      }
+    return new Promise((resolve) => {
+      // Create a hidden iframe
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.zIndex = '-1';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      const content = previewElement.cloneNode(true);
+
+      // Reset transforms and margins on content root to prevent print scaling issues
+      content.style.transform = 'none';
+      content.style.margin = '0 auto';
+      content.style.boxShadow = 'none';
+
+      doc.open();
+      doc.write('<!DOCTYPE html><html><head><title>' + filename + '</title>');
+
+      // Copy all styles from main document
+      const styles = document.querySelectorAll('link[rel="stylesheet"], style');
+      styles.forEach(style => {
+        doc.write(style.outerHTML);
+      });
+
+      // Add print-specific styles
+      doc.write(`
+        <style>
+          @page { size: auto; margin: 0mm; }
+          body { 
+            margin: 0; 
+            padding: 0; 
+            background: white; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+          }
+          #print-wrapper {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            overflow: visible;
+          }
+          /* Hide non-print elements */
+          .no-print, [role="tooltip"] { display: none !important; }
+        </style>
+      `);
+
+      doc.write('</head><body>');
+      doc.write('<div id="print-wrapper">');
+      doc.write(content.outerHTML);
+      doc.write('</div>');
+      doc.write('</body></html>');
+      doc.close();
+
+      // Execute print
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+
+          // Cleanup after delay
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+            resolve(true);
+          }, 2000); // Allow interaction with print dialog on mobile
+        }, 800); // Allow styles to render
+      };
     });
-
-    let resumeContent = element.querySelector('[class*="font-sans"]') ||
-      element.querySelector('[class*="resume-page"]') ||
-      element.querySelector('.bg-white') ||
-      element;
-
-    resumeContent.style.width = '210mm';
-    resumeContent.style.maxWidth = '210mm';
-    resumeContent.style.minHeight = '297mm';
-    resumeContent.style.height = 'auto';
-    resumeContent.style.overflow = 'visible';
-    resumeContent.style.pageBreakAfter = 'auto';
-    resumeContent.style.pageBreakInside = 'auto';
-    resumeContent.style.display = 'block';
-    resumeContent.style.backgroundColor = '#ffffff';
-    resumeContent.style.margin = '0 auto';
-    resumeContent.style.boxShadow = 'none';
-
-    const opt = {
-      margin: [5, 0, 5, 0],
-      filename: filename,
-      image: { type: 'png', quality: 1.0 },
-      html2canvas: {
-        scale: 4,
-        useCORS: true,
-        letterRendering: true,
-        allowTaint: true,
-        scrollY: 0,
-        scrollX: 0,
-        windowWidth: 794,
-        logging: false,
-        removeContainer: true,
-        backgroundColor: '#ffffff',
-        onclone: (clonedDoc) => {
-          const style = clonedDoc.createElement('style');
-          style.innerHTML = `
-            [class*="bg-amber"], [class*="bg-red"], [class*="bg-green"], [class*="bg-blue"], .notification, .toast { 
-              display: none !important; 
-            }
-            body, html { background-color: #ffffff !important; overflow: visible !important; }
-            .resume-page, .printable-content, div[class*="resume-preview"] {
-              padding: 40px !important; 
-              width: 100% !important;
-            }
-          `;
-          clonedDoc.head.appendChild(style);
-        }
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-
-    return html2pdf().set(opt).from(resumeContent).save();
   },
 
   exportPdf: async (id, template) => {
