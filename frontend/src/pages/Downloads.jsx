@@ -67,19 +67,58 @@ export default function Downloads() {
 
     const handleOpenFile = async (file) => {
         try {
-            // Read file data
-            const data = await Filesystem.readFile({
+            // Get the file URI
+            const fileUri = await Filesystem.getUri({
                 path: file.name,
                 directory: Directory.Documents
             });
 
-            // Convert to blob and open
-            const blob = base64ToBlob(data.data, 'application/pdf');
-            const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            // For mobile, use the native file URI
+            if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+                // Create a temporary link and click it
+                const link = document.createElement('a');
+                link.href = fileUri.uri;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
 
-            // Clean up after 30 seconds
-            setTimeout(() => URL.revokeObjectURL(url), 30000);
+                // For Android, we need to use the content:// URI
+                if (Capacitor.getPlatform() === 'android') {
+                    // Read file and create blob URL as fallback
+                    const data = await Filesystem.readFile({
+                        path: file.name,
+                        directory: Directory.Documents
+                    });
+
+                    const blob = base64ToBlob(data.data, 'application/pdf');
+                    const blobUrl = URL.createObjectURL(blob);
+
+                    // Try to open in new window
+                    const newWindow = window.open(blobUrl, '_blank');
+                    if (!newWindow) {
+                        // Fallback: download the file
+                        link.href = blobUrl;
+                        link.download = file.name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                    }
+                } else {
+                    // iOS can use the file URI directly
+                    window.open(fileUri.uri, '_blank');
+                }
+            } else {
+                // Web fallback
+                const data = await Filesystem.readFile({
+                    path: file.name,
+                    directory: Directory.Documents
+                });
+                const blob = base64ToBlob(data.data, 'application/pdf');
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 30000);
+            }
         } catch (e) {
             console.error('Open failed:', e);
             alert('Could not open file. ' + e.message);
