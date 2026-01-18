@@ -11,9 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,66 +26,47 @@ public class PdfService {
     /**
      * Generates a high-fidelity PDF by rendering HTML via Puppeteer (Node.js).
      */
+    /**
+     * Generates a high-fidelity PDF by rendering HTML via Puppeteer service (HTTP).
+     * Faster than spawning a new process every time.
+     */
     public byte[] generatePdfFromHtml(String htmlContent) {
-        Process process = null;
         try {
-            logger.info("Starting Puppeteer PDF generation...");
+            logger.info("Requesting PDF from local Node.js service...");
 
-            // Script location in Docker container
-            String scriptPath = "/app/backend/scripts/generate-pdf.js";
+            // Use Java 11+ HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(2))
+                    .build();
 
-            // Local dev fallback
-            if (!new File(scriptPath).exists()) {
-                scriptPath = "backend/scripts/generate-pdf.js";
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create("http://localhost:3000/generate"))
+                    .header("Content-Type", "text/plain")
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(htmlContent, StandardCharsets.UTF_8))
+                    .timeout(java.time.Duration.ofSeconds(30))
+                    .build();
+
+            java.net.http.HttpResponse<byte[]> response = client.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() != 200) {
+                // Try reading body for error
+                String errorBody = new String(response.body(), StandardCharsets.UTF_8);
+                throw new RuntimeException("Puppeteer Service Failed: " + response.statusCode() + " - " + errorBody);
             }
 
-            ProcessBuilder pb = new ProcessBuilder("node", scriptPath);
-            // We do NOT redirectErrorStream because we want strict binary output on stdout.
-
-            process = pb.start();
-
-            // Write HTML to stdin
-            try (var writer = process.getOutputStream()) {
-                writer.write(htmlContent.getBytes(StandardCharsets.UTF_8));
-                writer.flush();
-            }
-
-            // Read PDF from stdout
-            ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-            process.getInputStream().transferTo(pdfOut);
-
-            // Wait - extended timeout for safety
-            boolean finished = process.waitFor(90, TimeUnit.SECONDS);
-            if (!finished) {
-                process.destroyForcibly();
-                throw new RuntimeException("Timeout generating PDF");
-            }
-
-            if (process.exitValue() != 0) {
-                throw new RuntimeException("Puppeteer failed with code " + process.exitValue());
-            }
-
-            byte[] pdfBytes = pdfOut.toByteArray();
-            pdfOut.close();
-
-            logger.info("PDF generated successfully. Size: " + pdfBytes.length);
+            byte[] pdfBytes = response.body();
+            logger.info("PDF received successfully. Size: " + pdfBytes.length);
 
             if (pdfBytes.length == 0) {
-                throw new RuntimeException("Generated PDF is empty");
+                throw new RuntimeException("Received empty PDF from service");
             }
 
             return pdfBytes;
 
         } catch (Exception e) {
-            logger.error("Failed to generate PDF from HTML", e);
+            logger.error("Failed to generate PDF via HTTP service", e);
             throw new RuntimeException("PDF Generation Failed: " + e.getMessage());
-        } finally {
-            // Aggressive Cleanup
-            if (process != null) {
-                process.destroyForcibly();
-            }
-            // Explicit GC as requested to handle sequential high-memory tasks on small VM
-            System.gc();
         }
     }
 

@@ -79,5 +79,5 @@ ENV PORT=8080
 ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseSerialGC"
 
 # Run the application with explicit binding
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -Dspring.main.lazy-initialization=true -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "node /app/backend/scripts/generate-pdf.js & exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -Dspring.main.lazy-initialization=true -jar app.jar"]
 

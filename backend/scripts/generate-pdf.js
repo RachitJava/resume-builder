@@ -1,62 +1,86 @@
 const puppeteer = require('puppeteer-core');
-const fs = require('fs');
+const http = require('http');
 
-(async () => {
-    try {
-        // Read stdin
-        const html = fs.readFileSync(0, 'utf-8');
+let browser;
 
-        // Launch browser (using system chromium)
-        const browser = await puppeteer.launch({
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--disable-software-rasterizer',
-                '--font-render-hinting=none',
-                '--no-zygote',
-                '--single-process',
-                '--disable-extensions'
-            ],
-            headless: 'new'
+const initBrowser = async () => {
+    browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--font-render-hinting=none',
+            '--disable-extensions'
+        ],
+        headless: 'new'
+    });
+    console.log('Browser initialized');
+};
+
+const server = http.createServer(async (req, res) => {
+    if (req.method === 'POST' && req.url === '/generate') {
+        let body = '';
+        req.on('data', chunk => {
+            body += chunk.toString();
         });
 
-        const page = await browser.newPage();
+        req.on('end', async () => {
+            if (!browser) {
+                await initBrowser();
+            }
 
-        // Optimize for speed - reduced scale factor
-        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
+            let page;
+            try {
+                page = await browser.newPage();
 
-        await page.setContent(html, {
-            waitUntil: 'domcontentloaded', // Much faster than networkidle0
-            timeout: 10000
+                await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
+                await page.setContent(body, {
+                    waitUntil: 'domcontentloaded',
+                    timeout: 10000
+                });
+
+                const bodyHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+                const heightMm = Math.ceil(bodyHeight * 0.264583) + 1;
+                const finalHeight = Math.max(50, heightMm);
+
+                const pdf = await page.pdf({
+                    width: '210mm',
+                    height: `${finalHeight}mm`,
+                    printBackground: true,
+                    margin: { top: 0, right: 0, bottom: 0, left: 0 },
+                    pageRanges: '1'
+                });
+
+                res.writeHead(200, {
+                    'Content-Type': 'application/pdf',
+                    'Content-Length': pdf.length
+                });
+                res.end(pdf);
+
+            } catch (error) {
+                console.error('PDF Gen Error:', error);
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Error generating PDF: ' + error.message);
+            } finally {
+                if (page) await page.close();
+            }
         });
-
-        // Calculate height for Single Page requirement
-        const bodyHeight = await page.evaluate(() => {
-            document.body.style.transform = 'none';
-            return document.documentElement.scrollHeight;
-        });
-
-        // Convert px to mm
-        const heightMm = Math.ceil(bodyHeight * 0.264583) + 1;
-        const finalHeight = Math.max(50, heightMm);
-
-        const pdf = await page.pdf({
-            width: '210mm',
-            height: `${finalHeight}mm`,
-            printBackground: true,
-            margin: { top: 0, right: 0, bottom: 0, left: 0 },
-            pageRanges: '1'
-        });
-
-        await browser.close();
-
-        // Write binary to stdout
-        process.stdout.write(pdf);
-    } catch (error) {
-        console.error('PDF Generation Error:', error);
-        process.exit(1);
+    } else if (req.url === '/health') {
+        res.writeHead(200);
+        res.end('OK');
+    } else {
+        res.writeHead(404);
+        res.end('Not Found');
     }
+});
+
+// Start server
+const PORT = 3000;
+(async () => {
+    await initBrowser();
+    server.listen(PORT, () => {
+        console.log(`PDF Server running on port ${PORT}`);
+    });
 })();
