@@ -4,8 +4,22 @@ const API_URL = '/api/auth';
 
 export const authApi = {
   sendOtp: async (email) => {
-    const response = await api.post(`${API_URL}/send-otp`, { email });
-    return response.data;
+    try {
+      console.log('Sending OTP to:', email);
+      console.log('API Base URL:', api.defaults.baseURL);
+      const response = await api.post(`${API_URL}/send-otp`, { email });
+      console.log('OTP sent successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('OTP API Error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+      });
+      throw error;
+    }
   },
 
   verifyOtp: async (email, otp) => {
