@@ -132,8 +132,8 @@ export default function ResumeForm({ resume, onChange }) {
             key={section.id}
             onClick={() => setActiveSection(section.id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-smooth border-b-2 ${activeSection === section.id
-                ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50 bg-white dark:bg-[#18181B]'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-[#18181B]/50'
+              ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50 bg-white dark:bg-[#18181B]'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-[#18181B]/50'
               }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,7 +160,7 @@ export default function ResumeForm({ resume, onChange }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Email</label>
                 <input
@@ -194,7 +194,7 @@ export default function ResumeForm({ resume, onChange }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">LinkedIn</label>
                 <input
@@ -247,7 +247,7 @@ export default function ResumeForm({ resume, onChange }) {
             {(resume.experience || []).map((exp, index) => (
               <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">Experience {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience {index + 1}</span>
                   <button
                     onClick={() => removeExperience(index)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
@@ -258,7 +258,7 @@ export default function ResumeForm({ resume, onChange }) {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Company</label>
                     <input
@@ -281,7 +281,7 @@ export default function ResumeForm({ resume, onChange }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                     <input
@@ -305,7 +305,7 @@ export default function ResumeForm({ resume, onChange }) {
                 </div>
 
                 {/* Service-Based Company Toggle */}
-                <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700/30">
+                <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -316,7 +316,7 @@ export default function ResumeForm({ resume, onChange }) {
                     <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black dark:bg-white"></div>
                   </label>
                   <div>
-                    <span className="text-sm font-medium text-gray-200">Service-Based Company</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-200">Service-Based Company</span>
                     <p className="text-xs text-gray-500">Enable for consulting firms (TCS, Cognizant, Accenture, etc.)</p>
                   </div>
                 </div>
@@ -361,9 +361,9 @@ export default function ResumeForm({ resume, onChange }) {
                     </div>
 
                     {(exp.clientProjects || []).map((client, clientIndex) => (
-                      <div key={clientIndex} className="p-3 bg-gray-900/50 rounded-lg border border-black dark:border-white/20 space-y-3">
+                      <div key={clientIndex} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-black dark:text-white">Client {clientIndex + 1}</span>
+                          <span className="text-xs font-medium text-gray-900 dark:text-gray-100">Client {clientIndex + 1}</span>
                           <button
                             onClick={() => removeClientProject(index, clientIndex)}
                             className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
@@ -374,7 +374,7 @@ export default function ResumeForm({ resume, onChange }) {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Client Name</label>
                             <input
@@ -408,7 +408,7 @@ export default function ResumeForm({ resume, onChange }) {
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
                             <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                             <input
@@ -475,7 +475,7 @@ export default function ResumeForm({ resume, onChange }) {
             {(resume.education || []).map((edu, index) => (
               <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">Education {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Education {index + 1}</span>
                   <button
                     onClick={() => removeEducation(index)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
@@ -497,7 +497,7 @@ export default function ResumeForm({ resume, onChange }) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Degree</label>
                     <input
@@ -520,7 +520,7 @@ export default function ResumeForm({ resume, onChange }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                     <input
@@ -599,7 +599,7 @@ export default function ResumeForm({ resume, onChange }) {
             {(resume.projects || []).map((proj, index) => (
               <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-300">Project {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Project {index + 1}</span>
                   <button
                     onClick={() => removeProject(index)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"

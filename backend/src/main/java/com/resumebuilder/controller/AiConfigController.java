@@ -24,23 +24,9 @@ public class AiConfigController {
         if (!authService.isAdmin(authHeader)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required"));
         }
-        List<AiProviderConfig> all = repository.findAll();
-        // Aggressively filter out GEMINI or BROWSER configs from the result
-        List<AiProviderConfig> filtered = all.stream()
-                .filter(c -> {
-                    String name = c.getProviderName().toLowerCase();
-                    boolean isUnauthorized = name.contains("gemini") || name.contains("browser");
-                    if (isUnauthorized) {
-                        // Attempt to delete it from DB the background if it's still there
-                        try {
-                            repository.delete(c);
-                        } catch (Exception e) {
-                        }
-                    }
-                    return !isUnauthorized;
-                })
-                .toList();
-        return ResponseEntity.ok(filtered);
+        // Return all configs, including any manual Gemini/Browser ones if the admin
+        // added them
+        return ResponseEntity.ok(repository.findAll());
     }
 
     @PostMapping
