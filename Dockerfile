@@ -51,7 +51,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 RUN mkdir -p /app/backend/scripts
 WORKDIR /app/backend/scripts
-RUN npm init -y && npm install puppeteer-core
+RUN npm init -y && npm install puppeteer
 
 WORKDIR /app
 

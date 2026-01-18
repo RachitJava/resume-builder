@@ -1,11 +1,10 @@
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 const http = require('http');
 
 let browser;
 
 const initBrowser = async () => {
-    browser = await puppeteer.launch({
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+    const launchOptions = {
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -15,7 +14,13 @@ const initBrowser = async () => {
             '--disable-extensions'
         ],
         headless: 'new'
-    });
+    };
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    browser = await puppeteer.launch(launchOptions);
     console.log('Browser initialized');
 };
 
