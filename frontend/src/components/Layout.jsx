@@ -70,11 +70,7 @@ export default function Layout({ children }) {
     </>
   );
 
-  const isEditor = location.pathname.startsWith('/editor');
 
-  if (isEditor) {
-    return <>{children || <Outlet />}</>;
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A]">

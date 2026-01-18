@@ -17,7 +17,7 @@ const fs = require('fs');
                 '--disable-software-rasterizer',
                 '--font-render-hinting=none',
                 '--no-zygote',
-                '--single-process', // Aggressive memory saving
+                '--single-process',
                 '--disable-extensions'
             ],
             headless: 'new'
@@ -25,33 +25,30 @@ const fs = require('fs');
 
         const page = await browser.newPage();
 
-        // Optimize for speed/quality
-        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 }); // 794px = 210mm @ 96dpi
+        // Optimize for speed - reduced scale factor
+        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
 
         await page.setContent(html, {
-            waitUntil: ['load', 'networkidle0'],
-            timeout: 30000
+            waitUntil: 'domcontentloaded', // Much faster than networkidle0
+            timeout: 10000
         });
 
         // Calculate height for Single Page requirement
         const bodyHeight = await page.evaluate(() => {
-            document.body.style.transform = 'none'; // Ensure no weird scaling
+            document.body.style.transform = 'none';
             return document.documentElement.scrollHeight;
         });
 
-        // Convert px to mm (approx) -> 794px = 210mm -> 1px = 0.264mm
-        // TIGHT FIT: Add minimal buffer (1mm) to prevent overflow but remove "extra" space
+        // Convert px to mm
         const heightMm = Math.ceil(bodyHeight * 0.264583) + 1;
-
-        // Use exact height (do not force A4 minimum) to avoid extra underlay at bottom
-        const finalHeight = Math.max(50, heightMm); // Min 50mm just for safety
+        const finalHeight = Math.max(50, heightMm);
 
         const pdf = await page.pdf({
             width: '210mm',
             height: `${finalHeight}mm`,
             printBackground: true,
             margin: { top: 0, right: 0, bottom: 0, left: 0 },
-            pageRanges: '1' // Force 1 page logic just in case
+            pageRanges: '1'
         });
 
         await browser.close();
