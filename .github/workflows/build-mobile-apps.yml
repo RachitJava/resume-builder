@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: write  # Required for creating releases
+
 jobs:
   build-android:
     name: Build Android APK
@@ -61,6 +64,8 @@ jobs:
     needs: [build-android]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: write  # Required for creating releases
     
     steps:
       - name: Download Android APK
