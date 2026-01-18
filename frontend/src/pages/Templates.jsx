@@ -184,24 +184,24 @@ export default function Templates() {
 
       {/* Preview Modal */}
       {previewData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewData(null)}>
-          <div className="relative max-w-4xl max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-xl font-bold">{previewData.name} Preview</h3>
-              <button onClick={() => setPreviewData(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewData(null)}>
+          <div className="relative max-w-4xl max-h-[85vh] sm:max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+              <h3 className="text-base sm:text-xl font-bold truncate pr-2">{previewData.name} Preview</h3>
+              <button onClick={() => setPreviewData(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-100 dark:bg-[#0A0A0A] min-h-0">
               <div className="max-w-3xl mx-auto shadow-2xl">
                 <ScaledPreview template={previewData.baseStyle} />
               </div>
             </div>
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">
-              <button onClick={() => setPreviewData(null)} className="btn btn-secondary">Close</button>
-              <button onClick={() => handleSelectTemplate(previewData)} className="btn btn-primary">Use Template</button>
+            <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2 sm:gap-3 bg-white dark:bg-[#18181B] flex-shrink-0">
+              <button onClick={() => setPreviewData(null)} className="btn btn-secondary text-sm sm:text-base px-3 sm:px-4">Close</button>
+              <button onClick={() => handleSelectTemplate(previewData)} className="btn btn-primary text-sm sm:text-base px-3 sm:px-4">Use Template</button>
             </div>
           </div>
         </div>
