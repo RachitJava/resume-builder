@@ -35,8 +35,7 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using html2pdf with DYNAMIC HEIGHT
-  // This ensures the PDF is always exactly ONE PAGE that fits the content
+  // Client-side PDF generation with STRICT Single Page enforcement
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
     const element = previewElement.cloneNode(true);
 
@@ -44,43 +43,57 @@ export const resumeApi = {
     const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
     notifications.forEach(n => n.remove());
 
-    // Calculate dimensions
-    // We force the width to match A4 standard (210mm) but allow height to be whatever the content is
-    const contentHeight = previewElement.scrollHeight;
-    const contentWidth = previewElement.scrollWidth;
-
-    // Convert px height to mm based on the A4 width ratio
-    const a4WidthMm = 210;
-    // pixel to mm ratio
-    const heightMm = (contentHeight / contentWidth) * a4WidthMm;
-
-    // Add a small buffer/margin to bottom
-    const finalHeightMm = Math.max(297, heightMm + 10); // Minimum A4 height (297)
-
-    // Set styles for the capture
-    element.style.width = '210mm';
-    element.style.minHeight = '297mm';
-    element.style.height = 'auto';
-    element.style.margin = '0 auto';
-    element.style.background = 'white';
+    // Force exact pixel width to match screen preview (A4 @ 96dpi approx 794px)
+    // This ensures text flow matches exactly what user sees on screen
+    const targetWidth = 794;
+    element.style.width = `${targetWidth}px`;
+    element.style.height = 'auto'; // allow natural height
+    element.style.margin = '0';
+    element.style.padding = '0';
     element.style.transform = 'none';
+    element.style.background = 'white';
+
+    // Calculate content height with this specific width
+    // We append temporarily to a hidden container to get true scrollHeight
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = `${targetWidth}px`;
+    container.appendChild(element);
+    document.body.appendChild(container);
+
+    const contentHeight = element.scrollHeight;
+
+    // Clean up temp container
+    document.body.removeChild(container);
+
+    // Calculate PDF dimensions in mm
+    // A4 width is 210mm
+    const a4WidthMm = 210;
+    const pxToMm = a4WidthMm / targetWidth;
+    const contentHeightMm = contentHeight * pxToMm;
+
+    // Minimum height is A4 (297mm), otherwise grow to fit content
+    const finalHeightMm = Math.max(297, contentHeightMm + 5); // 5mm buffer for safety
 
     const opt = {
       margin: 0,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
+      enableLinks: false,
       html2canvas: {
         scale: 2,
         useCORS: true,
-        letterRendering: true,
         logging: false,
-        windowWidth: previewElement.scrollWidth,
+        width: targetWidth,
+        windowWidth: targetWidth
       },
-      // Use custom format [width, height] to create a single continuous page
+      pagebreak: { mode: 'avoid-all', before: [], after: [], avoid: [] }, // STRICTLY prevent page breaks
       jsPDF: {
         unit: 'mm',
-        format: [a4WidthMm, finalHeightMm],
-        orientation: 'portrait'
+        format: [a4WidthMm, finalHeightMm], // Dynamic single page size
+        orientation: 'portrait',
+        floatPrecision: 16
       }
     };
 
@@ -88,7 +101,6 @@ export const resumeApi = {
   },
 
   exportPdf: async (id, template) => {
-    // Backend PDF generation preserved as fallback...
     try {
       const params = template ? `?template=${template}` : '';
       const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
