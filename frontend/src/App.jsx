@@ -8,6 +8,7 @@ import Templates from './pages/Templates';
 import JobMatch from './pages/JobMatch';
 import AdminDashboard from './pages/AdminDashboard';
 import Downloads from './pages/Downloads';
+import PdfViewer from './pages/PdfViewer';
 import UpdateChecker from './components/UpdateChecker';
 
 function ProtectedRoute({ children }) {
@@ -76,6 +77,11 @@ function AppRoutes() {
         <Route path="downloads" element={
           <ProtectedRoute>
             <Downloads />
+          </ProtectedRoute>
+        } />
+        <Route path="pdf-viewer" element={
+          <ProtectedRoute>
+            <PdfViewer />
           </ProtectedRoute>
         } />
       </Route>
