@@ -18,7 +18,7 @@ export default function Downloads() {
         }
 
         try {
-            // Check/Request Permissions first (Android 11+ might be weird, but let's try)
+            // Check/Request Permissions
             try {
                 const perm = await Filesystem.checkPermissions();
                 if (perm.publicStorage !== 'granted') {
@@ -30,7 +30,7 @@ export default function Downloads() {
                     }
                 }
             } catch (err) {
-                console.warn('Permission check failed (might be iOS or old Android):', err);
+                console.warn('Permission check failed:', err);
             }
 
             // Read Documents Directory
@@ -39,12 +39,11 @@ export default function Downloads() {
                 directory: Directory.Documents
             });
 
-            // Filter JSON result.files array
-            // Note: On Android, files might be objects { name, type, ... } or strings depending on version/plugin
+            // Filter PDF files
             const pdfs = result.files
-                .map(f => (typeof f === 'string' ? { name: f } : f)) // Normalize
+                .map(f => (typeof f === 'string' ? { name: f } : f))
                 .filter(f => f.name && f.name.toLowerCase().endsWith('.pdf'))
-                .sort((a, b) => b.mtime - a.mtime); // Sort by modified time if available, or name
+                .sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
             setFiles(pdfs);
         } catch (e) {
@@ -68,33 +67,50 @@ export default function Downloads() {
 
     const handleOpenFile = async (file) => {
         try {
-            // 1. Read file data
+            // Read file data
             const data = await Filesystem.readFile({
                 path: file.name,
                 directory: Directory.Documents
             });
 
-            // 2. Prepare File object for sharing
+            // Convert to blob and open
+            const blob = base64ToBlob(data.data, 'application/pdf');
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+
+            // Clean up after 30 seconds
+            setTimeout(() => URL.revokeObjectURL(url), 30000);
+        } catch (e) {
+            console.error('Open failed:', e);
+            alert('Could not open file. ' + e.message);
+        }
+    };
+
+    const handleShareFile = async (file) => {
+        try {
+            // Read file data
+            const data = await Filesystem.readFile({
+                path: file.name,
+                directory: Directory.Documents
+            });
+
+            // Prepare File object for sharing
             const blob = base64ToBlob(data.data, 'application/pdf');
             const pdfFile = new File([blob], file.name, { type: 'application/pdf' });
 
-            // 3. Use Web Share API (Supported in modern Android WebView)
+            // Use Web Share API
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                 await navigator.share({
                     files: [pdfFile],
                     title: file.name,
-                    text: 'Here is my resume'
+                    text: 'Sharing my resume'
                 });
             } else {
-                // Fallback: Create Object URL (opens in browser PDF viewer if allowed)
-                const url = URL.createObjectURL(blob);
-                window.open(url, '_blank');
-                // Revoke later?
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
+                alert('Share not supported on this device');
             }
         } catch (e) {
             console.error('Share failed:', e);
-            alert('Could not share/view file. ' + e.message);
+            alert('Could not share file. ' + e.message);
         }
     };
 
@@ -112,7 +128,8 @@ export default function Downloads() {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Downloads</h1>
                 <button
                     onClick={loadFiles}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                    title="Refresh"
                 >
                     🔄
                 </button>
@@ -120,23 +137,23 @@ export default function Downloads() {
 
             {loading ? (
                 <div className="flex justify-center py-10">
-                    <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-2 border-gray-900 dark:border-white border-t-transparent rounded-full animate-spin"></div>
                 </div>
             ) : error ? (
-                <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm">
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm border border-red-200 dark:border-red-800">
                     {error}
                 </div>
             ) : files.length === 0 ? (
                 <div className="text-center py-16 bg-gray-50 dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-gray-800">
                     <p className="text-gray-500">No PDF files found in Documents.</p>
+                    <p className="text-xs text-gray-400 mt-2">Download a resume to see it here</p>
                 </div>
             ) : (
                 <div className="grid gap-3">
                     {files.map((file, i) => (
                         <div
                             key={i}
-                            onClick={() => handleOpenFile(file)}
-                            className="flex items-center gap-4 p-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl active:scale-98 transition-transform"
+                            className="flex items-center gap-3 p-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
                         >
                             <div className="w-10 h-10 flex-shrink-0 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center">
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,6 +167,29 @@ export default function Downloads() {
                                 <p className="text-xs text-gray-500">
                                     PDF Document
                                 </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleOpenFile(file)}
+                                    className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex items-center gap-1"
+                                    title="Open PDF"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    Open
+                                </button>
+                                <button
+                                    onClick={() => handleShareFile(file)}
+                                    className="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors flex items-center gap-1"
+                                    title="Share PDF"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                    Share
+                                </button>
                             </div>
                         </div>
                     ))}
