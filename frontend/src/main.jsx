@@ -9,3 +9,24 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
+// Auto-refresh on app launch (PWA update check)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      // Check for updates when app is opened
+      registration.update();
+
+      // Auto-reload when new version is available
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available, reload the page
+            console.log('New version available! Reloading...');
+            window.location.reload();
+          }
+        });
+      });
+    });
+  });
+}
