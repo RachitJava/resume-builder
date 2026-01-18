@@ -1,4 +1,5 @@
 import api from './config';
+import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 
@@ -34,88 +35,58 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using NATIVE BROWSER PRINT for exact match.
-  // This is the most reliable way to ensure "What You See Is What You Get".
+  // Client-side PDF generation using VISUAL SNAPSHOT
+  // This captures the EXACT pixels of the preview to ensure 100% template fidelity
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
-    return new Promise((resolve) => {
-      // Create a hidden iframe
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      iframe.style.zIndex = '-1';
-      document.body.appendChild(iframe);
+    const element = previewElement.cloneNode(true);
 
-      const doc = iframe.contentWindow.document;
-      const content = previewElement.cloneNode(true);
+    // Clean up notifications/UI
+    const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
+    notifications.forEach(n => n.remove());
 
-      // Clean up notifications
-      const notifications = content.querySelectorAll('[class*="toast"], [class*="notification"]');
-      notifications.forEach(n => n.remove());
+    // Force strict layout dimensions to match screen preview
+    // A4 width @ 96dpi is approx 794px
+    const targetWidth = 794;
+    element.style.width = `${targetWidth}px`;
+    element.style.margin = '0 auto';
+    element.style.background = 'white';
 
-      // Reset transforms to ensure clean print
-      content.style.transform = 'none';
-      content.style.margin = '0 auto';
+    // We append temporarily to get true height
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = `${targetWidth}px`;
+    container.appendChild(element);
+    document.body.appendChild(container);
 
-      doc.open();
-      doc.write('<!DOCTYPE html><html><head><title>' + filename + '</title>');
+    const contentHeight = element.scrollHeight;
+    document.body.removeChild(container);
 
-      // Copy all styles from main document
-      const styles = document.querySelectorAll('link[rel="stylesheet"], style');
-      styles.forEach(style => {
-        doc.write(style.outerHTML);
-      });
+    // Calculate PDF dimensions
+    const a4WidthMm = 210;
+    const pxToMm = a4WidthMm / targetWidth;
+    const finalHeightMm = Math.max(297, contentHeight * pxToMm + 5);
 
-      // Add print-specific styles to force single page fitting ONLY if content allows, 
-      // but primarily to match preview style
-      doc.write(`
-        <style>
-          @page { size: auto; margin: 0mm; }
-          body { 
-            margin: 0; 
-            padding: 0; 
-            background: white; 
-            -webkit-print-color-adjust: exact; 
-            print-color-adjust: exact; 
-          }
-           /* Ensure the resume container respects the print width */
-          .resume-page {
-            width: 210mm !important;
-            max-width: 210mm !important;
-            margin: 0 auto !important;
-            box-shadow: none !important;
-            print-color-adjust: exact !important;
-            -webkit-print-color-adjust: exact !important;
-          }
-          /* Hide non-print elements */
-          .no-print, [role="tooltip"] { display: none !important; }
-        </style>
-      `);
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2, // High res for text clarity
+        useCORS: true,
+        logging: false,
+        width: targetWidth,
+        windowWidth: targetWidth
+      },
+      pagebreak: { mode: 'avoid-all' }, // STRICT single page
+      jsPDF: {
+        unit: 'mm',
+        format: [a4WidthMm, finalHeightMm],
+        orientation: 'portrait'
+      }
+    };
 
-      doc.write('</head><body>');
-      doc.write(content.outerHTML);
-      doc.write('</body></html>');
-      doc.close();
-
-      // Execute print
-      iframe.onload = () => {
-        setTimeout(() => {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-
-          // Cleanup after delay
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-            resolve(true);
-          }, 2000);
-        }, 800); // Allow styles to render
-      };
-    });
+    return html2pdf().set(opt).from(element).save();
   },
 
   exportPdf: async (id, template) => {
