@@ -41,7 +41,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(to);
-            message.setSubject("Your ResumeForge Login OTP");
+            message.setSubject("Your DecisiveML Login OTP");
 
             // Update password from database keys if available
             try {
@@ -59,11 +59,11 @@ public class EmailService {
             } catch (Exception e) {
                 log.debug("No Mail key in database, using system default: {}", e.getMessage());
             }
-            message.setSubject("Your ResumeForge Login OTP");
+            message.setSubject("Your DecisiveML Login OTP");
             message.setText(String.format("""
                     Hello,
 
-                    Your one-time password (OTP) for ResumeForge login is:
+                    Your one-time password (OTP) for DecisiveML login is:
 
                     %s
 
@@ -72,7 +72,7 @@ public class EmailService {
                     If you didn't request this, please ignore this email.
 
                     Best regards,
-                    ResumeForge Team
+                    DecisiveML Team
                     """, otp));
 
             mailSender.send(message);

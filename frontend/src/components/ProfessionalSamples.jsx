@@ -53,14 +53,14 @@ export default function ProfessionalSamples() {
       </div>
 
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto invisible-scrollbar pb-2 whitespace-nowrap min-w-full">
         {categories.map((category) => (
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-smooth ${selectedCategory === category
-                ? 'bg-black dark:bg-white text-white dark:text-black'
-                : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-100'
+              ? 'bg-black dark:bg-white text-white dark:text-black'
+              : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-100'
               }`}
           >
             {category === 'all' ? 'All Professions' : category}
@@ -69,7 +69,7 @@ export default function ProfessionalSamples() {
       </div>
 
       {/* Samples Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         {filteredSamples.map((sample) => (
           <button
             key={sample.id}

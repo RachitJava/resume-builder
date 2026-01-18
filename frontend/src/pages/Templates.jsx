@@ -92,12 +92,12 @@ export default function Templates() {
       </div>
 
       {/* Country Filter */}
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-2 md:gap-3">
         <button
           onClick={() => setSelectedCountry('all')}
-          className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${selectedCountry === 'all'
+          className={`px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-smooth ${selectedCountry === 'all'
             ? 'bg-black dark:bg-white text-white dark:text-black'
-            : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-50'
+            : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:text-gray-50'
             }`}
         >
           🌍 All Templates
@@ -106,9 +106,9 @@ export default function Templates() {
           <button
             key={code}
             onClick={() => setSelectedCountry(code)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${selectedCountry === code
+            className={`px-4 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-smooth ${selectedCountry === code
               ? 'bg-black dark:bg-white text-white dark:text-black'
-              : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-50'
+              : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:text-gray-50'
               }`}
           >
             {countryFlags[code]} {name}

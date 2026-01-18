@@ -271,14 +271,14 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-50">
       {/* Header */}
       <header className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Admin Dashboard</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">Manage API keys, users, and templates</p>
           </div>
           <button
             onClick={() => navigate('/')}
-            className="btn btn-secondary text-sm"
+            className="btn btn-secondary text-sm w-full sm:w-auto text-center"
           >
             ← Back to App
           </button>
@@ -301,10 +301,10 @@ export default function AdminDashboard() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex gap-2 overflow-x-auto invisible-scrollbar mb-8 border-b border-gray-200 dark:border-gray-800 whitespace-nowrap min-w-full">
           <button
             onClick={() => setActiveTab('api-keys')}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'api-keys'
+            className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'api-keys'
               ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'users'
+            className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'users'
               ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('templates')}
-            className={`px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'templates'
+            className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'templates'
               ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
@@ -417,7 +417,7 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h2 className="text-xl font-semibold">AI Provider Management</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -426,15 +426,15 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
           </div>
           <button
             onClick={() => setShowAddConfigForm(!showAddConfigForm)}
-            className="btn btn-primary text-sm"
+            className="btn btn-primary text-sm w-full sm:w-auto"
           >
             {showAddConfigForm ? 'Cancel' : '+ Add Provider'}
           </button>
         </div>
 
         {showAddConfigForm && (
-          <form onSubmit={onAddConfig} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6 mb-6 grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <form onSubmit={onAddConfig} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-4 md:p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Provider Name</label>
               <input
                 placeholder="e.g. Groq, OpenAI, Anthropic"
@@ -450,7 +450,7 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
                 placeholder="https://..."
                 value={newConfig.apiUrl}
                 onChange={e => setNewConfig({ ...newConfig, apiUrl: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700"
+                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700 font-mono text-xs"
                 required
               />
             </div>
@@ -460,11 +460,11 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
                 placeholder="e.g. llama-3.3-70b-versatile"
                 value={newConfig.modelName}
                 onChange={e => setNewConfig({ ...newConfig, modelName: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700"
+                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700 font-mono text-xs"
                 required
               />
             </div>
-            <button className="btn btn-primary col-span-2 mt-2">Create Strategy</button>
+            <button className="btn btn-primary md:col-span-2 mt-2">Create Strategy</button>
           </form>
         )}
 
@@ -575,7 +575,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
 
   return (
     <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold">User Management</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -588,7 +588,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
             setEditingUser(null);
             setFormData({ email: '', password: '', isAdmin: false });
           }}
-          className="btn btn-primary text-sm"
+          className="btn btn-primary text-sm w-full sm:w-auto"
         >
           {showAddForm ? 'Cancel' : '+ Add User'}
         </button>
@@ -597,7 +597,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
       {/* Add/Edit Form */}
       {(showAddForm || editingUser) && (
         <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Email</label>
               <input
@@ -611,7 +611,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">
-                Password {editingUser && '(leave blank to keep current)'}
+                Password {editingUser && '(optional)'}
               </label>
               <input
                 type="password"
@@ -640,78 +640,141 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
         </form>
       )}
 
-      {/* Users Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-gray-200 dark:border-gray-800">
-            <tr>
-              <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
-              <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Role</th>
-              <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Created</th>
-              <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
+      {/* Users Table / Mobile Cards */}
+      <div className="overflow-hidden">
+        {/* Desktop View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead className="border-b border-gray-200 dark:border-gray-800">
               <tr>
-                <td colSpan="4" className="py-12 text-center text-gray-500 dark:text-gray-400">
-                  No users found.
-                </td>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Role</th>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Created</th>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
               </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-100 dark:border-gray-800/50">
-                  <td className="py-4 font-medium">{user.email}</td>
-                  <td className="py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.isAdmin
-                      ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                      : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
-                      }`}>
-                      {user.isAdmin ? 'Admin' : 'User'}
-                    </span>
-                  </td>
-                  <td className="py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const newStatus = !user.isAdmin;
-                          onUpdateUser(user.id, { isAdmin: newStatus });
-                        }}
-                        className={`px-3 py-1 rounded text-xs font-medium ${user.isAdmin
-                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20'
-                          : 'bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20'}`}
-                      >
-                        {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingUser(user);
-                          setFormData({ email: user.email, password: '', isAdmin: user.isAdmin });
-                          setShowAddForm(false);
-                        }}
-                        className="px-3 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => onDeleteUser(user.id)}
-                        className="px-3 py-1 rounded text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"
-                      >
-                        Delete
-                      </button>
-
-                    </div>
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-12 text-center text-gray-500 dark:text-gray-400">
+                    No users found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id} className="border-b border-gray-100 dark:border-gray-800/50">
+                    <td className="py-4 font-medium">{user.email}</td>
+                    <td className="py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.isAdmin
+                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                        : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+                        }`}>
+                        {user.isAdmin ? 'Admin' : 'User'}
+                      </span>
+                    </td>
+                    <td className="py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (user.isAdmin && !confirm(`Are you sure you want to revoke admin access for ${user.email}?`)) {
+                              return;
+                            }
+                            const newStatus = !user.isAdmin;
+                            onUpdateUser(user.id, { isAdmin: newStatus });
+                          }}
+                          className={`px-3 py-1 rounded text-xs font-medium border ${user.isAdmin
+                            ? 'bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400 dark:border-red-500/30 hover:bg-red-500/20'
+                            : 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400 dark:border-green-500/30 hover:bg-green-500/20'}`}
+                          title={user.isAdmin ? "Remove admin privileges" : "Grant admin privileges"}
+                        >
+                          {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingUser(user);
+                            setFormData({ email: user.email, password: '', isAdmin: user.isAdmin });
+                            setShowAddForm(false);
+                          }}
+                          className="px-3 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onDeleteUser(user.id)}
+                          className="px-3 py-1 rounded text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile View - Cards */}
+        <div className="md:hidden space-y-4">
+          {users.length === 0 ? (
+            <div className="py-12 text-center text-gray-500 dark:text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+              No users found.
+            </div>
+          ) : (
+            users.map((user) => (
+              <div key={user.id} className="p-4 bg-gray-50 dark:bg-[#1C1C1F] border border-gray-200 dark:border-gray-800 rounded-xl space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 truncate mr-2">
+                    <p className="font-medium text-sm truncate">{user.email}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${user.isAdmin
+                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
+                    }`}>
+                    {user.isAdmin ? 'Admin' : 'User'}
+                  </span>
+                </div>
+                <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                  <button
+                    onClick={() => {
+                      if (user.isAdmin && !confirm(`Are you sure you want to revoke admin access for ${user.email}?`)) return;
+                      onUpdateUser(user.id, { isAdmin: !user.isAdmin });
+                    }}
+                    className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border ${user.isAdmin
+                      ? 'bg-red-500/10 text-red-600 border-red-500/20'
+                      : 'bg-green-500/10 text-green-600 border-green-500/20'}`}
+                  >
+                    {user.isAdmin ? 'Revoke' : 'Make Admin'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingUser(user);
+                      setFormData({ email: user.email, password: '', isAdmin: user.isAdmin });
+                      setShowAddForm(false);
+                    }}
+                    className="flex-1 py-2 rounded text-[10px] font-bold uppercase bg-blue-500/10 text-blue-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDeleteUser(user.id)}
+                    className="px-3 py-2 rounded bg-red-500/10 text-red-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -740,16 +803,16 @@ function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Generate from Description */}
-          <div className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6">
+          <div className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-4 md:p-6">
             <h3 className="font-semibold mb-3">Generate from Description</h3>
             <textarea
               value={aiDescription}
               onChange={(e) => setAiDescription(e.target.value)}
               placeholder="Describe the template you want to create... e.g., 'A modern, minimalist template with a sidebar for skills, using blue accents and clean typography'"
               rows={5}
-              className="w-full mb-4"
+              className="w-full mb-4 text-sm"
             />
             <button
               onClick={() => {
@@ -766,9 +829,9 @@ function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating
           </div>
 
           {/* Generate from Image */}
-          <div className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6">
+          <div className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-4 md:p-6">
             <h3 className="font-semibold mb-3">Generate from Image</h3>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center mb-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 md:p-6 text-center mb-4">
               <input
                 type="file"
                 accept="image/*"
@@ -779,17 +842,17 @@ function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating
               <label htmlFor="template-image" className="cursor-pointer">
                 {imageFile ? (
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 break-all">
                       {imageFile.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">Click to change</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Click to change</p>
                   </div>
                 ) : (
                   <div>
-                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-10 h-10 md:w-12 md:h-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       Upload template image
                     </p>
                   </div>
@@ -854,7 +917,7 @@ function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating
 function GeneralKeysSection({ keys, showAddForm, setShowAddForm, newKey, setNewKey, onAddKey, onDelete }) {
   return (
     <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-semibold">System API Keys</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -863,14 +926,14 @@ function GeneralKeysSection({ keys, showAddForm, setShowAddForm, newKey, setNewK
         </div>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="btn btn-secondary text-sm"
+          className="btn btn-secondary text-sm w-full sm:w-auto"
         >
           {showAddForm ? 'Cancel' : '+ Add System Key'}
         </button>
       </div>
 
       {showAddForm && (
-        <form onSubmit={onAddKey} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6 mb-6 grid grid-cols-2 gap-4">
+        <form onSubmit={onAddKey} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-4 md:p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Key Name</label>
             <input
@@ -894,31 +957,31 @@ function GeneralKeysSection({ keys, showAddForm, setShowAddForm, newKey, setNewK
             </select>
           </div>
           {newKey.provider === 'mail' && (
-            <div className="col-span-2">
+            <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address (Sender)</label>
               <input
                 type="email"
                 placeholder="e.g. your-email@gmail.com"
                 value={newKey.owner || ''}
                 onChange={e => setNewKey({ ...newKey, owner: e.target.value })}
-                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700"
+                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700 font-mono text-xs"
                 required={newKey.provider === 'mail'}
               />
               <p className="text-[10px] text-gray-500 mt-1">This email address must match the account generating the App Password.</p>
             </div>
           )}
-          <div className="col-span-2">
+          <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">API Key / Password</label>
             <input
               type="password"
               placeholder="Enter sensitive key..."
               value={newKey.apiKey}
               onChange={e => setNewKey({ ...newKey, apiKey: e.target.value })}
-              className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700"
+              className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700 font-mono text-xs"
               required
             />
           </div>
-          <button className="btn btn-primary col-span-2 mt-2">Save System Key</button>
+          <button className="btn btn-primary md:col-span-2 mt-2">Save System Key</button>
         </form>
       )}
 

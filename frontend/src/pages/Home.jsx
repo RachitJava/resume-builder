@@ -113,8 +113,8 @@ export default function Home() {
       </div>
 
       {/* Tabs: Samples / My Resumes */}
-      <div className="border-b border-gray-200 dark:border-gray-800">
-        <div className="flex gap-8">
+      <div className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto invisible-scrollbar">
+        <div className="flex gap-4 md:gap-8 whitespace-nowrap min-w-max pb-px">
           <button
             onClick={() => setActiveTab('samples')}
             className={`pb-3 text-sm font-medium border-b-2 transition-smooth ${activeTab === 'samples'
@@ -168,7 +168,7 @@ export default function Home() {
                         {resume.fullName?.charAt(0) || '?'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
+                    <div className="flex items-center gap-1 md:opacity-0 group-hover:opacity-100 transition-smooth">
                       <button
                         onClick={(e) => handleExport(resume.id, resume.template, e)}
                         className="p-2 rounded-lg hover:bg-gray-100 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:text-black dark:text-white"

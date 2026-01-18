@@ -229,44 +229,65 @@ export default function Editor() {
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A] flex flex-col font-body">
       {/* Header */}
-      <header className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between sticky top-0 z-50 gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors font-medium">
-            ← Back
+      <header className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 px-3 md:px-6 py-3 flex items-center justify-between sticky top-0 z-50 gap-2">
+        <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+          <button onClick={() => navigate('/')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors flex items-center gap-1">
+            <span className="text-xl md:text-sm">←</span>
+            <span className="hidden md:inline font-medium">Back</span>
           </button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 font-display">Resume Editor</h1>
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
+          <h1 className="text-base md:text-xl font-bold text-gray-900 dark:text-gray-50 font-display truncate max-w-[100px] sm:max-w-none">Editor</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <TemplateSelector
-            value={resume.template}
-            onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
-          />
-
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 hidden md:block"></div>
-
-
-
+        <div className="flex items-center gap-2 md:gap-3 ml-auto">
+          <div className="hidden sm:block">
+            <TemplateSelector
+              value={resume.template}
+              onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
+            />
+          </div>
 
           <button
             onClick={() => handleSave()}
-            className="btn btn-secondary text-sm font-medium"
+            className="p-2 md:px-4 md:py-2 md:btn md:btn-secondary text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-800 sm:bg-transparent"
             disabled={saving}
+            title="Save Draft"
           >
-            {saving ? 'Saving...' : 'Save Draft'}
+            {saving ? (
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <span className="flex items-center gap-2">
+                <svg className="w-4 h-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span className="hidden sm:inline">Save</span>
+              </span>
+            )}
           </button>
 
           <button
             onClick={handleExport}
-            className="btn btn-primary flex items-center gap-2 text-sm font-medium"
+            className="btn btn-primary flex items-center gap-1 md:gap-2 text-xs md:text-sm font-medium px-3 py-2 md:px-4 md:py-2"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Download PDF
+            <span className="hidden xs:inline">Download</span>
+            <span className="xs:hidden">PDF</span>
           </button>
         </div>
       </header>
+
+      {/* Mobile Template Selector Toggle (below header on mobile) */}
+      <div className="sm:hidden px-4 py-2 bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Template:</span>
+          <TemplateSelector
+            value={resume.template}
+            onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
+          />
+        </div>
+      </div>
 
       {/* Mobile Tabs */}
       <div className="lg:hidden flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] sticky top-[73px] z-40">
