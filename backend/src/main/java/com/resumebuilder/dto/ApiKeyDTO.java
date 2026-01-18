@@ -8,6 +8,7 @@ public class ApiKeyDTO {
     private String id;
     private String name;
     private String provider;
+    private String owner;
     private String apiKey; // Masked for responses
     private boolean active;
     private int priority;
@@ -23,6 +24,7 @@ public class ApiKeyDTO {
     public static class CreateRequest {
         private String name;
         private String provider = "groq";
+        private String owner;
         private String apiKey;
         private int priority = 0;
         private long tokenLimit = 0;
@@ -31,6 +33,7 @@ public class ApiKeyDTO {
     @Data
     public static class UpdateRequest {
         private String name;
+        private String owner;
         private boolean active;
         private int priority;
         private long tokenLimit;

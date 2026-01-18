@@ -8,6 +8,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @Slf4j
 public class EmailService {
@@ -36,20 +38,27 @@ public class EmailService {
         }
 
         try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject("Your ResumeForge Login OTP");
+
             // Update password from database keys if available
             try {
-                String dbMailKey = apiKeyService.getActiveApiKey("mail");
-                if (dbMailKey != null && mailSender instanceof JavaMailSenderImpl) {
-                    ((JavaMailSenderImpl) mailSender).setPassword(dbMailKey);
-                    log.info("Using Mail key from database");
+                Optional<com.resumebuilder.entity.ApiKey> mailKeyOpt = apiKeyService.getActiveKeyEntity("mail");
+                if (mailKeyOpt.isPresent() && mailSender instanceof JavaMailSenderImpl) {
+                    ((JavaMailSenderImpl) mailSender).setPassword(mailKeyOpt.get().getApiKey());
+                    if (mailKeyOpt.get().getOwner() != null && !mailKeyOpt.get().getOwner().isEmpty()) {
+                        ((JavaMailSenderImpl) mailSender).setUsername(mailKeyOpt.get().getOwner());
+                        message.setFrom(mailKeyOpt.get().getOwner());
+                        log.info("Using Mail key from database. From: {}", mailKeyOpt.get().getOwner());
+                    } else {
+                        log.info("Using Mail key from database (Default From address)");
+                    }
                 }
             } catch (Exception e) {
                 log.debug("No Mail key in database, using system default: {}", e.getMessage());
             }
-
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
             message.setSubject("Your ResumeForge Login OTP");
             message.setText(String.format("""
                     Hello,

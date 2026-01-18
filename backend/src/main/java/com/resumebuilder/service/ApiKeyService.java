@@ -48,6 +48,11 @@ public class ApiKeyService {
         throw new RuntimeException("No active API keys available for provider: " + provider);
     }
 
+    public Optional<ApiKey> getActiveKeyEntity(String provider) {
+        return repository.findFirstByProviderAndActiveAndConsecutiveErrorsLessThanOrderByPriorityAsc(
+                provider, true, MAX_CONSECUTIVE_ERRORS);
+    }
+
     /**
      * Report a successful API call
      */
@@ -100,11 +105,12 @@ public class ApiKeyService {
         ApiKey key = new ApiKey();
         key.setName(request.getName());
         key.setProvider(request.getProvider());
+        key.setOwner(request.getOwner());
         key.setApiKey(request.getApiKey());
         key.setPriority(request.getPriority());
         key.setTokenLimit(request.getTokenLimit());
         key.setActive(true);
-        
+
         key = repository.save(key);
         log.info("Created API key: {}", key.getName());
         return toDTO(key);
@@ -114,7 +120,10 @@ public class ApiKeyService {
         ApiKey key = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("API key not found: " + id));
 
-        if (request.getName() != null) key.setName(request.getName());
+        if (request.getName() != null)
+            key.setName(request.getName());
+        if (request.getOwner() != null)
+            key.setOwner(request.getOwner());
         key.setActive(request.isActive());
         key.setPriority(request.getPriority());
         key.setTokenLimit(request.getTokenLimit());
@@ -133,6 +142,7 @@ public class ApiKeyService {
         dto.setId(key.getId());
         dto.setName(key.getName());
         dto.setProvider(key.getProvider());
+        dto.setOwner(key.getOwner());
         // Mask API key - show only last 4 chars
         String masked = "****" + key.getApiKey().substring(Math.max(0, key.getApiKey().length() - 4));
         dto.setApiKey(masked);

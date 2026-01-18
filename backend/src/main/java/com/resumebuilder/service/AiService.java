@@ -124,8 +124,13 @@ public class AiService {
                 return parseAiContent(content);
             }
         } catch (WebClientResponseException e) {
-            if (e.getStatusCode().value() == 429)
+            // Rotate key on Rate Limit (429) OR Unauthorized (401) - key might be
+            // invalid/expired
+            if (e.getStatusCode().value() == 429 || e.getStatusCode().value() == 401) {
+                log.warn("AI API Error {}: Rotating key for provider {}", e.getStatusCode(),
+                        config.dbConfig != null ? config.dbConfig.getProviderName() : "unknown");
                 handleRateLimit(config);
+            }
             throw e;
         } catch (Exception e) {
             log.error("AI API Error", e);
@@ -276,8 +281,10 @@ public class AiService {
 
         } catch (WebClientResponseException e) {
             log.error("AI API Error: Status {}, Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
-            if (e.getStatusCode().value() == 429)
+            if (e.getStatusCode().value() == 429 || e.getStatusCode().value() == 401) {
+                log.warn("Rotating key due to error {}", e.getStatusCode());
                 handleRateLimit(config);
+            }
             AiDTO.ChatResponse fail = new AiDTO.ChatResponse();
             fail.setMessage("AI Service Error (" + e.getStatusCode() + "): " + e.getResponseBodyAsString());
             return fail;

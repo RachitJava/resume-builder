@@ -26,6 +26,8 @@ public class ApiKey {
     @Column(nullable = false, length = 500)
     private String apiKey;
 
+    private String owner; // e.g. email address for mail keys
+
     private boolean active = true;
 
     private int priority = 0; // Lower = higher priority

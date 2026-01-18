@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../api/adminApi';
+import ScaledPreview from '../components/LiveResumePreview';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
   const [showTemplateCreator, setShowTemplateCreator] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [templateImage, setTemplateImage] = useState(null);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
 
   useEffect(() => {
     checkAdminAndLoad();
@@ -141,7 +143,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       await adminApi.createApiKey(newKey);
-      setNewKey({ name: '', provider: 'mail', apiKey: '', priority: 0 });
+      setNewKey({ name: '', provider: 'mail', apiKey: '', priority: 0, owner: '' });
       setShowAddKeyForm(false);
       setSuccess('API Key added!');
       await loadGeneralApiKeys();
@@ -376,10 +378,34 @@ export default function AdminDashboard() {
             showCreator={showTemplateCreator}
             setShowCreator={setShowTemplateCreator}
             aiGenerating={aiGenerating}
-            onGenerateFromImage={handleGenerateTemplateFromImage}
             onGenerateFromAI={handleGenerateTemplateFromAI}
             onDelete={handleDeleteTemplate}
+            setPreviewTemplate={setPreviewTemplate}
           />
+        )}
+
+        {/* Template Preview Modal */}
+        {previewTemplate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewTemplate(null)}>
+            <div className="relative max-w-4xl max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
+                <h3 className="text-xl font-bold">{previewTemplate.name} Preview</h3>
+                <button onClick={() => setPreviewTemplate(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
+                <div className="max-w-3xl mx-auto shadow-2xl">
+                  <ScaledPreview template={previewTemplate.baseStyle} />
+                </div>
+              </div>
+              <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">
+                <button onClick={() => setPreviewTemplate(null)} className="btn btn-secondary">Close</button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -651,6 +677,17 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
+                          const newStatus = !user.isAdmin;
+                          onUpdateUser(user.id, { isAdmin: newStatus });
+                        }}
+                        className={`px-3 py-1 rounded text-xs font-medium ${user.isAdmin
+                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20'
+                          : 'bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20'}`}
+                      >
+                        {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                      </button>
+                      <button
+                        onClick={() => {
                           setEditingUser(user);
                           setFormData({ email: user.email, password: '', isAdmin: user.isAdmin });
                           setShowAddForm(false);
@@ -665,6 +702,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                       >
                         Delete
                       </button>
+
                     </div>
                   </td>
                 </tr>
@@ -678,7 +716,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
 }
 
 // ===== TEMPLATES SECTION COMPONENT =====
-function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating, onGenerateFromImage, onGenerateFromAI, onDelete }) {
+function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating, onGenerateFromImage, onGenerateFromAI, onDelete, setPreviewTemplate }) {
   const [aiDescription, setAiDescription] = useState('');
   const [imageFile, setImageFile] = useState(null);
 
@@ -778,25 +816,22 @@ function TemplatesSection({ templates, showCreator, setShowCreator, aiGenerating
       <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
         <h2 className="text-xl font-semibold mb-6">Existing Templates</h2>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {templates.length === 0 ? (
             <div className="col-span-3 py-12 text-center text-gray-500 dark:text-gray-400">
               No templates yet. Create one using AI!
             </div>
           ) : (
             templates.map((template) => (
-              <div key={template.id} className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
-                <div className="aspect-[8.5/11] bg-gray-100 dark:bg-[#27272A] rounded mb-3 overflow-hidden border border-gray-200 dark:border-gray-700">
-                  <img
-                    src={`/api/public/templates/${template.baseStyle || 'modern'}/preview`}
-                    alt={template.name}
-                    className="w-full h-full object-cover object-top transition-transform hover:scale-105"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">Preview Unavailable</div>';
-                    }}
-                  />
+              <div key={template.id} className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 group">
+                <div
+                  className="aspect-[8.5/11] bg-gray-100 dark:bg-[#27272A] rounded mb-3 overflow-hidden border border-gray-200 dark:border-gray-700 cursor-pointer relative"
+                  onClick={() => setPreviewTemplate(template)}
+                >
+                  <ScaledPreview template={template.baseStyle} className="w-full" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <span className="bg-white/90 dark:bg-black/90 px-3 py-1.5 rounded-full text-xs font-bold shadow-sm backdrop-blur-sm">Quick Look</span>
+                  </div>
                 </div>
                 <h3 className="font-semibold mb-1">{template.name}</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{template.description}</p>
@@ -858,6 +893,20 @@ function GeneralKeysSection({ keys, showAddForm, setShowAddForm, newKey, setNewK
               <option value="openai">OpenAI</option>
             </select>
           </div>
+          {newKey.provider === 'mail' && (
+            <div className="col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address (Sender)</label>
+              <input
+                type="email"
+                placeholder="e.g. your-email@gmail.com"
+                value={newKey.owner || ''}
+                onChange={e => setNewKey({ ...newKey, owner: e.target.value })}
+                className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700"
+                required={newKey.provider === 'mail'}
+              />
+              <p className="text-[10px] text-gray-500 mt-1">This email address must match the account generating the App Password.</p>
+            </div>
+          )}
           <div className="col-span-2">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">API Key / Password</label>
             <input

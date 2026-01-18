@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import templateApi from '../api/templateApi';
+import ScaledPreview from '../components/LiveResumePreview';
 
 const countryFlags = {
   usa: '🇺🇸',
@@ -124,18 +125,9 @@ export default function Templates() {
             className="group bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-gray-300 dark:border-gray-700 transition-smooth cursor-pointer"
           >
             {/* Preview Header */}
-            <div className="aspect-[1/1.414] w-full bg-gray-100 dark:bg-[#27272A] relative overflow-hidden" onClick={() => setPreviewData(template)}>
-              <img
-                src={`/api/public/templates/${template.baseStyle || 'modern'}/preview?v=highres`}
-                alt={`${template.name} Preview`}
-                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentElement.classList.add('flex', 'items-center', 'justify-center', 'bg-gray-100', 'dark:bg-gray-800');
-                  e.target.parentElement.innerHTML = '<span class="text-xs text-gray-400">Preview Unavailable</span>';
-                }}
-              />
+            <div className="w-full bg-gray-100 dark:bg-[#27272A] relative overflow-hidden" onClick={() => setPreviewData(template)}>
+              <ScaledPreview template={template.baseStyle} className="w-full" />
+
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
               <div className="absolute top-3 right-3 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center shadow-sm z-10">
                 <span className="text-lg">{countryFlags[template.country]}</span>
@@ -204,12 +196,7 @@ export default function Templates() {
             </div>
             <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
               <div className="max-w-3xl mx-auto shadow-2xl">
-                <img
-                  src={`/api/public/templates/${previewData.baseStyle || 'modern'}/preview?v=highres`}
-                  alt={previewData.name}
-                  className="w-full h-auto block rounded-sm bg-white"
-                  loading="eager"
-                />
+                <ScaledPreview template={previewData.baseStyle} />
               </div>
             </div>
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">

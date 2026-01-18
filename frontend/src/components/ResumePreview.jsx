@@ -219,7 +219,11 @@ function ExperienceBlock({ exp, bulletStyle = '•', showBorder = false }) {
 // MODERN TEMPLATE - Clean, professional, ATS-friendly
 // Single column, standard fonts, clear hierarchy
 // ============================================================
-function ModernTemplate({ resume }) {
+// ============================================================
+// MODERN TEMPLATE - Clean, professional, ATS-friendly
+// Single column, standard fonts, clear hierarchy
+// ============================================================
+export function ModernTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
       {/* Header - Contact at top, not in document header */}
@@ -336,7 +340,10 @@ function ModernTemplate({ resume }) {
 // ============================================================
 // CLASSIC TEMPLATE - Traditional, serif font, formal
 // ============================================================
-function ClassicTemplate({ resume }) {
+// ============================================================
+// CLASSIC TEMPLATE - Traditional, serif font, formal
+// ============================================================
+export function ClassicTemplate({ resume }) {
   return (
     <div className="font-serif text-sm text-gray-800 leading-relaxed">
       <header className="text-center mb-6 pb-4 border-b-2 border-gray-800">
@@ -413,7 +420,10 @@ function ClassicTemplate({ resume }) {
 // ============================================================
 // MINIMAL TEMPLATE - Ultra clean, lots of white space
 // ============================================================
-function MinimalTemplate({ resume }) {
+// ============================================================
+// MINIMAL TEMPLATE - Ultra clean, lots of white space
+// ============================================================
+export function MinimalTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
       <header className="mb-8">
@@ -470,7 +480,10 @@ function MinimalTemplate({ resume }) {
 // ============================================================
 // EXECUTIVE TEMPLATE - Senior/leadership roles
 // ============================================================
-function ExecutiveTemplate({ resume }) {
+// ============================================================
+// EXECUTIVE TEMPLATE - Senior/leadership roles
+// ============================================================
+export function ExecutiveTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
       <header className="bg-slate-800 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
@@ -554,7 +567,11 @@ function ExecutiveTemplate({ resume }) {
 // CREATIVE TEMPLATE - For design/marketing roles
 // Note: Use only when applying to creative roles, NOT for ATS-heavy companies
 // ============================================================
-function CreativeTemplate({ resume }) {
+// ============================================================
+// CREATIVE TEMPLATE - For design/marketing roles
+// Note: Use only when applying to creative roles, NOT for ATS-heavy companies
+// ============================================================
+export function CreativeTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
       <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
@@ -620,7 +637,11 @@ function CreativeTemplate({ resume }) {
 // ATS TEMPLATE - MAXIMUM ATS COMPATIBILITY
 // Single column, standard fonts, simple formatting
 // ============================================================
-function AtsTemplate({ resume }) {
+// ============================================================
+// ATS TEMPLATE - MAXIMUM ATS COMPATIBILITY
+// Single column, standard fonts, simple formatting
+// ============================================================
+export function AtsTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-900 leading-relaxed" style={{ fontFamily: 'Arial, sans-serif' }}>
       {/* Simple header - No graphics, tables, or special formatting */}
@@ -732,7 +753,10 @@ function AtsTemplate({ resume }) {
 // ============================================================
 // ATS CLEAN - Harvard/Stanford style, very traditional
 // ============================================================
-function AtsCleanTemplate({ resume }) {
+// ============================================================
+// ATS CLEAN - Harvard/Stanford style, very traditional
+// ============================================================
+export function AtsCleanTemplate({ resume }) {
   return (
     <div className="font-serif text-sm text-gray-900 leading-relaxed" style={{ fontFamily: 'Times New Roman, serif' }}>
       <header className="text-center mb-4 pb-3 border-b-2 border-gray-800">
@@ -847,7 +871,10 @@ function AtsCleanTemplate({ resume }) {
 // ============================================================
 // ATS BOLD - Strong visual hierarchy, still ATS-friendly
 // ============================================================
-function AtsBoldTemplate({ resume }) {
+// ============================================================
+// ATS BOLD - Strong headers, clear separation
+// ============================================================
+export function AtsBoldTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-900 leading-relaxed" style={{ fontFamily: 'Arial, sans-serif' }}>
       <header className="mb-4">
@@ -966,7 +993,10 @@ function AtsBoldTemplate({ resume }) {
 // ============================================================
 // ATS COMPACT - Dense, single page optimized
 // ============================================================
-function AtsCompactTemplate({ resume }) {
+// ============================================================
+// ATS COMPACT - Optimized for one page
+// ============================================================
+export function AtsCompactTemplate({ resume }) {
   return (
     <div className="font-sans text-xs text-gray-900 leading-snug" style={{ fontFamily: 'Arial, sans-serif' }}>
       <header className="text-center mb-3">
@@ -1069,7 +1099,10 @@ function AtsCompactTemplate({ resume }) {
 // ============================================================
 // TWO COLUMN - Visual template (less ATS-friendly, use for direct applications)
 // ============================================================
-function TwoColumnTemplate({ resume }) {
+// ============================================================
+// TWO COLUMN TEMPLATE - Modern sidebar layout
+// ============================================================
+export function TwoColumnTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 flex gap-6">
       {/* Sidebar */}
@@ -1155,7 +1188,10 @@ function TwoColumnTemplate({ resume }) {
 // ============================================================
 // DEVELOPER TEMPLATE - Tech-focused with code aesthetics
 // ============================================================
-function DeveloperTemplate({ resume }) {
+// ============================================================
+// DEVELOPER TEMPLATE - Code-inspired aesthetics
+// ============================================================
+export function DeveloperTemplate({ resume }) {
   return (
     <div className="font-mono text-sm text-gray-800 bg-gray-50 p-4 -m-6 md:-m-8 min-h-full">
       {/* Terminal-style header */}

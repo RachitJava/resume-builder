@@ -1,0 +1,5 @@
+{
+  "appId": "com.resumebuilder.app",
+  "appName": "Resume Builder",
+  "webDir": "dist"
+}
