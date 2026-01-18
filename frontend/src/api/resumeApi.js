@@ -68,7 +68,7 @@ export const resumeApi = {
       // Add print-specific styles
       doc.write(`
         <style>
-          @page { size: auto; margin: 0mm; }
+          @page { size: A4; margin: 0mm; }
           body { 
             margin: 0; 
             padding: 0; 
@@ -81,7 +81,14 @@ export const resumeApi = {
             min-height: 297mm;
             margin: 0 auto;
             background: white;
-            overflow: visible;
+            overflow: hidden; /* Prevent unwanted spillover to 2nd page */
+          }
+          /* Apply slight safety scaling to compensate for browser rendering differences */
+          .resume-page {
+            transform: scale(0.99) !important; 
+            transform-origin: top center !important;
+            margin-bottom: 0 !important;
+            box-shadow: none !important;
           }
           /* Hide non-print elements */
           .no-print, [role="tooltip"] { display: none !important; }
