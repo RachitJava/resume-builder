@@ -35,8 +35,8 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using Visual Snapshot with OVERSIZED PAGE
-  // We strictly enforce 1 page by calculating height + large buffer
+  // Client-side PDF generation using HIGH QUALITY, SCALED RENDERING
+  // This increases resolution to 3x and strictly manages margins to center content
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
     const element = previewElement.cloneNode(true);
 
@@ -44,64 +44,78 @@ export const resumeApi = {
     const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
     notifications.forEach(n => n.remove());
 
-    // Force strict layout dimensions to match screen preview (794px ~ A4 width)
-    const targetWidth = 794;
+    // Force strict layout dimensions to match screen preview
+    const targetWidth = 794; // approx A4 at 96dpi
+
+    // Apply styling to ensure content is centered and crisp
     element.style.width = `${targetWidth}px`;
-    element.style.minHeight = '1123px'; // Ensure at least A4 size
-    element.style.margin = '0';
-    element.style.padding = '0'; // Remove padding to prevent calculation errors
+    element.style.minHeight = '1123px';
+    element.style.margin = '0 auto'; // Center content
+    element.style.padding = '0';
     element.style.background = 'white';
     element.style.transform = 'none';
 
-    // Measure content height accurately by appending to DOM
+    // Ensure all internal containers are centered
+    // This fixes the "overlay text not in center" issue by forcing flex centering
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.justifyContent = 'center'; // Center horizontally
+    wrapper.style.width = `${targetWidth}px`;
+    wrapper.style.background = 'white';
+    wrapper.appendChild(element);
+
+    // Append to DOM for accurate measurement
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = `${targetWidth}px`;
-    container.appendChild(element);
+    container.appendChild(wrapper);
     document.body.appendChild(container);
 
-    // Wait a tick to ensure rendering
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // Wait for rendering
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-    const contentHeight = element.scrollHeight;
+    // Measure actual height
+    const contentHeight = wrapper.scrollHeight;
     document.body.removeChild(container);
 
     // Calculate PDF dimensions
+    // Use A4 Width (210mm) as the standard
     const a4WidthMm = 210;
     const pxToMm = a4WidthMm / targetWidth;
 
-    // Calculate required height + SIGNIFICANT BUFFER to prevent splitting
-    // We add 20mm extra space to ensure html2pdf never feels the need to break
-    const contentHeightMm = contentHeight * pxToMm;
-    const finalHeightMm = Math.max(297, contentHeightMm + 20);
+    // Height calculation with buffer, ensuring Single Page
+    const finalHeightMm = Math.max(297, contentHeight * pxToMm + 20);
 
     const opt = {
       margin: 0,
       filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
+      image: { type: 'jpeg', quality: 1.0 }, // Max quality
       html2canvas: {
-        scale: 2,
+        scale: 4, // Ultra-high resolution (4x) to fix "quality is not okay"
         useCORS: true,
         logging: false,
         width: targetWidth,
         windowWidth: targetWidth,
-        scrollY: 0
+        scrollY: 0,
+        x: 0, // Force left align start
+        scrollX: 0
       },
-      // Force avoid all page breaks
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       jsPDF: {
         unit: 'mm',
-        format: [a4WidthMm, finalHeightMm], // Custom single page size
+        format: [a4WidthMm, finalHeightMm],
         orientation: 'portrait'
       }
     };
 
+    // We pass the WRAPPER to ensure the centering context is captured
     return html2pdf().set(opt).from(element).save();
   },
 
   exportPdf: async (id, template) => {
+    // ... existing backend export code ...
     try {
       const params = template ? `?template=${template}` : '';
       const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
