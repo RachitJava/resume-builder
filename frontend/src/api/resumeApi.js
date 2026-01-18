@@ -1,5 +1,7 @@
 import api from './config';
 import html2pdf from 'html2pdf.js';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 const API_URL = '/api/resumes';
 
@@ -102,19 +104,91 @@ export const resumeApi = {
   },
 
   exportPdf: async (id, template) => {
-    const params = template ? `?template=${template}` : '';
-    const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
-      responseType: 'blob',
-    });
+    try {
+      const params = template ? `?template=${template}` : '';
+      const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
+        responseType: 'blob',
+      });
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'resume.pdf');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
+      // Check if response is valid
+      if (!response.data || response.data.size === 0) {
+        throw new Error('Received empty PDF file from server');
+      }
+
+      // Check if it's actually a PDF
+      const contentType = response.headers['content-type'];
+      if (contentType && !contentType.includes('pdf')) {
+        throw new Error(`Expected PDF but received: ${contentType}`);
+      }
+
+      const fileName = `resume-${id}.pdf`;
+
+      // Check if running on mobile (Capacitor)
+      if (Capacitor.isNativePlatform()) {
+        // Mobile: Use Capacitor Filesystem with permission request
+        try {
+          // Check and request permissions
+          const permissionStatus = await Filesystem.checkPermissions();
+
+          if (permissionStatus.publicStorage !== 'granted') {
+            const requestResult = await Filesystem.requestPermissions();
+            if (requestResult.publicStorage !== 'granted') {
+              throw new Error('Storage permission denied. Please enable storage access in settings to download PDFs.');
+            }
+          }
+
+          // Convert blob to base64
+          const reader = new FileReader();
+          const base64Data = await new Promise((resolve, reject) => {
+            reader.onloadend = () => {
+              const base64 = reader.result.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(response.data);
+          });
+
+          // Save to Downloads directory
+          const result = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Documents, // Use Documents for better compatibility
+            recursive: true
+          });
+
+          alert(`PDF saved successfully to Documents/${fileName}`);
+          return result;
+        } catch (fsError) {
+          console.error('Filesystem error:', fsError);
+          throw new Error(`Failed to save PDF: ${fsError.message}`);
+        }
+      } else {
+        // Web: Use traditional download
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+
+        document.body.appendChild(link);
+        link.click();
+
+        // Cleanup
+        setTimeout(() => {
+          link.remove();
+          window.URL.revokeObjectURL(url);
+        }, 100);
+      }
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      // Re-throw with more context
+      if (error.response) {
+        throw new Error(`Server error: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        throw new Error('No response from server. Check your internet connection.');
+      } else {
+        throw error;
+      }
+    }
   },
 };
 

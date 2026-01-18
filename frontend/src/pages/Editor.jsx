@@ -117,100 +117,13 @@ export default function Editor() {
     const savedResume = await handleSave();
     if (!savedResume) return;
 
-    const content = document.getElementById('resume-preview-content');
-    if (!content) {
-      alert('Preview not loaded');
-      return;
+    try {
+      // Use backend PDF generation
+      await resumeApi.exportPdf(savedResume.id, savedResume.template);
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert(`Failed to download PDF: ${error.message || 'Unknown error'}. Please try again.`);
     }
-
-    // Create a hidden iframe for native printing (Vector quality)
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-
-    // 1. Write structure
-    doc.open();
-    doc.write('<!DOCTYPE html><html><head><title>' + (savedResume.fullName || 'Resume') + '</title>');
-
-    // 2. Copy all styles
-    const styles = document.querySelectorAll('link[rel="stylesheet"], style');
-    styles.forEach(style => {
-      doc.write(style.outerHTML);
-    });
-
-    doc.write('</head><body style="margin:0; padding:0; background:white; overflow:hidden;">');
-    // Wrap content to ensuring captured height is correct
-    doc.write('<div id="print-wrapper" style="width:210mm; margin:0 auto;">' + content.outerHTML + '</div>');
-    doc.write('</body></html>');
-    doc.close();
-
-    // 3. Wait for load and print
-    iframe.onload = () => {
-      setTimeout(() => {
-        const doc = iframe.contentWindow.document;
-
-        // Clean up preview-specific styles for print
-        const contentDiv = doc.getElementById('resume-preview-content');
-        if (contentDiv) {
-          contentDiv.style.transform = 'none'; // Remove screen zoom
-          contentDiv.style.minHeight = 'auto';
-          contentDiv.style.height = 'auto';
-          contentDiv.style.margin = '0';
-          contentDiv.style.width = '100%';
-          contentDiv.style.boxShadow = 'none';
-          contentDiv.style.borderRadius = '0'; // Ensure square corners for print
-          contentDiv.classList.remove('resume-auto-fit'); // Remove auto-fit logic
-        }
-
-        // Calculate height
-        const wrapper = doc.getElementById('print-wrapper');
-        const heightPx = wrapper ? wrapper.scrollHeight : 1123;
-        // Add 30mm buffer to prevent overflow
-        const heightMm = Math.ceil(heightPx * 0.264583) + 30;
-
-        // Inject dynamic page size CSS and force desktop styles
-        const style = doc.createElement('style');
-        style.innerHTML = `
-          @page {
-            size: 210mm ${Math.max(297, heightMm)}mm;
-            margin: 0;
-          }
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            margin: 0;
-            padding: 0;
-          }
-          #print-wrapper {
-             width: 210mm;
-             margin: 0;
-             overflow: hidden;
-          }
-          
-          /* Force Tailwind MD styles to ensure full-width headers (negative margins match padding) */
-          .md\\:-m-8 { margin: -2rem !important; }
-          .md\\:-mx-8 { margin-left: -2rem !important; margin-right: -2rem !important; }
-          .md\\:p-8 { padding: 2rem !important; }
-          .md\\:mb-6 { margin-bottom: 1.5rem !important; }
-          .md\\:-m-6 { margin: -1.5rem !important; } /* Fallback just in case */
-        `;
-        doc.head.appendChild(style);
-
-        // Print
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-
-        // Cleanup
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 2000);
-      }, 500);
-    };
   };
 
   const handleAiSuggestions = (updates) => {
@@ -312,8 +225,8 @@ export default function Editor() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 container mx-auto p-4 md:p-6 lg:max-w-7xl">
-        <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-start">
+      <div className="flex-1 w-full px-2 md:px-4 lg:px-6 py-4 md:py-6">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-4 xl:gap-6 items-start max-w-[1920px] mx-auto">
           {/* Form Section */}
           <div className={`${activeTab === 'form' ? 'block' : 'hidden'} lg:block space-y-6`}>
             <ResumeForm resume={resume} onChange={setResume} />
