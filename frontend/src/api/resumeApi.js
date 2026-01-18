@@ -35,8 +35,8 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using VISUAL SNAPSHOT
-  // This captures the EXACT pixels of the preview to ensure 100% template fidelity
+  // Client-side PDF generation using Visual Snapshot with OVERSIZED PAGE
+  // We strictly enforce 1 page by calculating height + large buffer
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
     const element = previewElement.cloneNode(true);
 
@@ -44,20 +44,26 @@ export const resumeApi = {
     const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
     notifications.forEach(n => n.remove());
 
-    // Force strict layout dimensions to match screen preview
-    // A4 width @ 96dpi is approx 794px
+    // Force strict layout dimensions to match screen preview (794px ~ A4 width)
     const targetWidth = 794;
     element.style.width = `${targetWidth}px`;
-    element.style.margin = '0 auto';
+    element.style.minHeight = '1123px'; // Ensure at least A4 size
+    element.style.margin = '0';
+    element.style.padding = '0'; // Remove padding to prevent calculation errors
     element.style.background = 'white';
+    element.style.transform = 'none';
 
-    // We append temporarily to get true height
+    // Measure content height accurately by appending to DOM
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
+    container.style.top = '0';
     container.style.width = `${targetWidth}px`;
     container.appendChild(element);
     document.body.appendChild(container);
+
+    // Wait a tick to ensure rendering
+    await new Promise(resolve => setTimeout(resolve, 10));
 
     const contentHeight = element.scrollHeight;
     document.body.removeChild(container);
@@ -65,23 +71,29 @@ export const resumeApi = {
     // Calculate PDF dimensions
     const a4WidthMm = 210;
     const pxToMm = a4WidthMm / targetWidth;
-    const finalHeightMm = Math.max(297, contentHeight * pxToMm + 5);
+
+    // Calculate required height + SIGNIFICANT BUFFER to prevent splitting
+    // We add 20mm extra space to ensure html2pdf never feels the need to break
+    const contentHeightMm = contentHeight * pxToMm;
+    const finalHeightMm = Math.max(297, contentHeightMm + 20);
 
     const opt = {
       margin: 0,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
-        scale: 2, // High res for text clarity
+        scale: 2,
         useCORS: true,
         logging: false,
         width: targetWidth,
-        windowWidth: targetWidth
+        windowWidth: targetWidth,
+        scrollY: 0
       },
-      pagebreak: { mode: 'avoid-all' }, // STRICT single page
+      // Force avoid all page breaks
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
       jsPDF: {
         unit: 'mm',
-        format: [a4WidthMm, finalHeightMm],
+        format: [a4WidthMm, finalHeightMm], // Custom single page size
         orientation: 'portrait'
       }
     };
