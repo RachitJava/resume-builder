@@ -4,46 +4,7 @@ export default function ResumePreview({ resume, enableCompression = false }) {
   const previewRef = useRef(null);
   const [exceedsOnePage, setExceedsOnePage] = useState(false);
   const [compressionLevel, setCompressionLevel] = useState(0);
-  const [scale, setScale] = useState(1);
 
-  // Handle mobile scaling to fit screen
-  // Handle mobile scaling to fit screen using ResizeObserver for robustness
-  useEffect(() => {
-    const updateScale = () => {
-      if (!previewRef.current) return;
-      const parent = previewRef.current.parentElement;
-
-      if (parent && parent.clientWidth > 0) {
-        const availableWidth = parent.clientWidth;
-        // Minimal padding for aesthetics (32px total = 16px each side)
-        const maxWidth = availableWidth - 24;
-        const baseWidth = 794; // A4 standard width
-
-        // Only scale if container is smaller than A4 (mobile/tablet)
-        // And ensure we don't scale to 0 (min 0.1)
-        if (maxWidth < baseWidth && maxWidth > 0) {
-          setScale(Math.max(0.1, maxWidth / baseWidth));
-        } else {
-          setScale(1);
-        }
-      }
-    };
-
-    // Use ResizeObserver to detect when tab switches or container resizes
-    const observer = new ResizeObserver(() => {
-      // Wrap in requestAnimationFrame to avoid "ResizeObserver loop limit exceeded"
-      requestAnimationFrame(updateScale);
-    });
-
-    if (previewRef.current?.parentElement) {
-      observer.observe(previewRef.current.parentElement);
-    }
-
-    // Initial check
-    updateScale();
-
-    return () => observer.disconnect();
-  }, []);
 
   const templates = {
     modern: ModernTemplate,
@@ -169,15 +130,12 @@ export default function ResumePreview({ resume, enableCompression = false }) {
         <div
           id="resume-preview-content"
           ref={previewRef}
-          className="resume-page resume-auto-fit origin-top-left"
+          className="resume-page resume-auto-fit"
           style={{
-            // Scale to fit mobile screens
-            transform: `scale(${scale})`,
-            width: '794px', // Force standard A4 width for correct layout
+            width: '100%',
+            maxWidth: '794px',
             minHeight: '1123px',
             margin: '0 auto',
-            marginBottom: scale < 1 ? `-${1123 * (1 - scale) * 0.8}px` : '0', // Reduce most whitespace but keep safe buffer
-
             // Apply default padding if not compressing, otherwise use compression styles
             padding: shouldCompress && compressionLevel > 0 ? styles.padding : '32px',
             // Only apply other compression styles if actually compressing
