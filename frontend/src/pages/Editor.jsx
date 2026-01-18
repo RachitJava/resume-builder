@@ -273,7 +273,7 @@ export default function Editor() {
 
           {/* Preview Section */}
           <div className={`${activeTab === 'preview' ? 'block' : 'hidden'} lg:block lg:sticky lg:top-24 space-y-6 invisible-scrollbar`}>
-            <div ref={previewRef} className="shadow-lg rounded-none overflow-hidden bg-white">
+            <div ref={previewRef}>
               <ResumePreview resume={resume} />
             </div>
             {/* AI Optimizer removed from here, moving to Modal */}
