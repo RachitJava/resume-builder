@@ -26,6 +26,7 @@ public class User {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty("isAdmin")
     private boolean isAdmin = false;
 
     @PrePersist

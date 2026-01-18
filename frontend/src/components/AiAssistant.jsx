@@ -9,6 +9,8 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const chatRef = useRef(null);
+    const toggleRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -17,6 +19,25 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isOpen]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isOpen &&
+                chatRef.current &&
+                !chatRef.current.contains(event.target) &&
+                toggleRef.current &&
+                !toggleRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [isOpen]);
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -58,6 +79,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
         <>
             {/* Floating Toggle Button */}
             <button
+                ref={toggleRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-xl transition-all duration-300 ${isOpen ? 'bg-red-500 rotate-45' : 'bg-blue-600 hover:bg-blue-700'
                     } text-white`}
@@ -75,6 +97,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
 
             {/* Chat Panel */}
             <div
+                ref={chatRef}
                 className={`fixed bottom-24 right-6 w-96 max-w-[90vw] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
                     } z-40 flex flex-col`}
                 style={{ height: 'min(500px, 80vh)' }}

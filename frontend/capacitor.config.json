@@ -1,5 +1,18 @@
 {
-  "appId": "com.resumebuilder.app",
-  "appName": "Resume Builder",
-  "webDir": "dist"
+  "appId": "com.decisiveml.app",
+  "appName": "DecisiveML",
+  "webDir": "dist",
+  "server": {
+    "url": "https://rachitjava.github.io/resume-builder/",
+    "cleartext": true,
+    "allowNavigation": [
+      "rachitjava.github.io"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#18181B"
+    }
+  }
 }

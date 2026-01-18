@@ -596,47 +596,68 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
 
       {/* Add/Edit Form */}
       {(showAddForm || editingUser) && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-[#27272A] rounded-xl p-6 mb-8 border border-gray-100 dark:border-gray-800 shadow-sm transition-all">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Email</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
               <input
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="user@example.com"
-                className="w-full"
+                className="w-full text-sm"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">
-                Password {editingUser && '(optional)'}
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Password {editingUser && <span className="text-xs font-normal text-gray-400 ml-1">(Optional)</span>}
               </label>
               <input
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="••••••••"
-                className="w-full"
+                className="w-full text-sm"
                 required={!editingUser}
               />
             </div>
           </div>
-          <div className="mt-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.isAdmin}
-                onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-50">Admin privileges</span>
+
+          <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-gray-100 dark:border-gray-800">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={formData.isAdmin}
+                  onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
+                  className="sr-only"
+                />
+                <div className={`w-11 h-6 rounded-full transition-colors ${formData.isAdmin ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-700'}`}></div>
+                <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isAdmin ? 'translate-x-5' : 'translate-x-0'}`}></div>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                  {formData.isAdmin ? '✨ Administrator' : 'Standard User'}
+                </span>
+              </div>
             </label>
+            <div className="flex gap-3">
+              <button type="submit" className="flex-1 sm:flex-none btn btn-primary px-8">
+                {editingUser ? 'Save Updates' : 'Create User'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setEditingUser(null);
+                }}
+                className="flex-1 sm:flex-none btn btn-secondary px-8"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <button type="submit" className="mt-4 btn btn-primary">
-            {editingUser ? 'Update User' : 'Add User'}
-          </button>
         </form>
       )}
 
@@ -648,9 +669,9 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
             <thead className="border-b border-gray-200 dark:border-gray-800">
               <tr>
                 <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Email</th>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Role</th>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Admin Access</th>
                 <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Created</th>
-                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Actions</th>
+                <th className="pb-3 text-left text-sm font-medium text-gray-600 dark:text-gray-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -663,48 +684,42 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
               ) : (
                 users.map((user) => (
                   <tr key={user.id} className="border-b border-gray-100 dark:border-gray-800/50">
-                    <td className="py-4 font-medium">{user.email}</td>
+                    <td className="py-4 font-medium text-sm">{user.email}</td>
                     <td className="py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.isAdmin
-                        ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                        : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
-                        }`}>
-                        {user.isAdmin ? 'Admin' : 'User'}
-                      </span>
+                      <button
+                        onClick={() => {
+                          if (user.isAdmin && !confirm(`Are you sure you want to revoke admin access for ${user.email}?`)) {
+                            return;
+                          }
+                          onUpdateUser(user.id, { isAdmin: !user.isAdmin });
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${user.isAdmin
+                          ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
+                          : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
+                          }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${user.isAdmin ? 'bg-purple-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                        {user.isAdmin ? 'Revoke Admin' : 'Grant Admin'}
+                      </button>
                     </td>
-                    <td className="py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <td className="py-4 text-xs text-gray-600 dark:text-gray-400">
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </td>
-                    <td className="py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            if (user.isAdmin && !confirm(`Are you sure you want to revoke admin access for ${user.email}?`)) {
-                              return;
-                            }
-                            const newStatus = !user.isAdmin;
-                            onUpdateUser(user.id, { isAdmin: newStatus });
-                          }}
-                          className={`px-3 py-1 rounded text-xs font-medium border ${user.isAdmin
-                            ? 'bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400 dark:border-red-500/30 hover:bg-red-500/20'
-                            : 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400 dark:border-green-500/30 hover:bg-green-500/20'}`}
-                          title={user.isAdmin ? "Remove admin privileges" : "Grant admin privileges"}
-                        >
-                          {user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                        </button>
+                    <td className="py-4 text-right">
+                      <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => {
                             setEditingUser(user);
                             setFormData({ email: user.email, password: '', isAdmin: user.isAdmin });
                             setShowAddForm(false);
                           }}
-                          className="px-3 py-1 rounded text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                          className="px-3 py-1.5 rounded text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => onDeleteUser(user.id)}
-                          className="px-3 py-1 rounded text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"
+                          className="px-3 py-1.5 rounded text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-colors"
                         >
                           Delete
                         </button>
@@ -731,7 +746,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                     <p className="font-medium text-sm truncate">{user.email}</p>
                     <p className="text-[10px] text-gray-500 mt-0.5">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${user.isAdmin
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${user.isAdmin
                     ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                     : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
                     }`}>
@@ -744,11 +759,11 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                       if (user.isAdmin && !confirm(`Are you sure you want to revoke admin access for ${user.email}?`)) return;
                       onUpdateUser(user.id, { isAdmin: !user.isAdmin });
                     }}
-                    className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border ${user.isAdmin
-                      ? 'bg-red-500/10 text-red-600 border-red-500/20'
-                      : 'bg-green-500/10 text-green-600 border-green-500/20'}`}
+                    className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border transition-all ${user.isAdmin
+                      ? 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+                      : 'bg-gray-100 text-gray-500 border-gray-200'}`}
                   >
-                    {user.isAdmin ? 'Revoke' : 'Make Admin'}
+                    {user.isAdmin ? 'Revoke Admin' : 'Grant Admin'}
                   </button>
                   <button
                     onClick={() => {
