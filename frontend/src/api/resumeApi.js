@@ -35,87 +35,82 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using HIGH-RES VISUAL CAPTURE
-  // Quality: Scale 4 (Retina+). Layout: Dynamic Single Width + Centered.
+  // Client-side PDF generation using PIXEL-PERFECT ONE PAGE STRATEGY
+  // 1. Capture High-Res Canvas (Scale 4)
+  // 2. Set PDF Page Size = EXACT Canvas Dimensions (in Pixels)
+  // 3. This guarantees exactly 1 Page, High Quality, No Splits.
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
-    // 1. Clone element
+    // 1. Clone & Prep
     const element = previewElement.cloneNode(true);
-
-    // Clean up
     const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
     notifications.forEach(n => n.remove());
 
-    // 2. Setup Strict Dimensions
-    const targetWidth = 794; // Pixel match for A4 width
+    const targetWidth = 794;
     element.style.width = `${targetWidth}px`;
-    element.style.margin = '0 auto';
+    element.style.margin = '0'; // Margin handled by wrapper
     element.style.padding = '0';
-    element.style.transform = 'none';
     element.style.background = 'white';
-    // Ensure height is auto to capture full content
+    element.style.transform = 'none';
     element.style.minHeight = '1123px';
-    element.style.height = 'auto';
 
-    // 3. Wrap in a centering container
-    // This fixes "text not in center" by providing a wide context where the element is strictly centered
+    // 2. Wrap for Centering
     const wrapper = document.createElement('div');
     wrapper.style.width = `${targetWidth}px`;
-    wrapper.style.background = '#ffffff';
     wrapper.style.display = 'flex';
     wrapper.style.justifyContent = 'center';
-    wrapper.style.margin = '0';
-    wrapper.style.padding = '0';
+    wrapper.style.background = 'white';
     wrapper.appendChild(element);
 
-    // 4. Append to DOM (hidden)
+    // Append hidden
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
     container.style.top = '0';
     container.style.width = `${targetWidth}px`;
     container.appendChild(wrapper);
-    document.body.appendChild(container);
+    document.body.appendChild(container); // Mount to ensure rendering
 
-    // Wait for layout
-    await new Promise(resolve => setTimeout(resolve, 50));
+    try {
+      // 3. Initialize Worker
+      const worker = html2pdf().from(wrapper).set({
+        margin: 0,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 4, // 4x Quality
+          useCORS: true,
+          logging: false,
+          width: targetWidth,
+          windowWidth: targetWidth
+        },
+        pagebreak: { mode: 'avoid-all' } // Safety
+      });
 
-    // 5. Calculate Dynamic Height
-    const contentHeight = wrapper.scrollHeight;
-    document.body.removeChild(container);
+      // 4. Generate Canvas first to get dimensions
+      // internal abstraction allows accessing 'canvas' token
+      const canvas = await worker.toCanvas().get('canvas');
 
-    const a4WidthMm = 210;
-    const pxToMm = a4WidthMm / targetWidth;
+      // 5. Force PDF Page Size to Match Canvas EXACTLY
+      // Use 'px' units to map 1:1
+      worker.set({
+        jsPDF: {
+          unit: 'px',
+          format: [canvas.width, canvas.height],
+          orientation: (canvas.width > canvas.height) ? 'landscape' : 'portrait',
+          compress: true
+        }
+      });
 
-    // Exact height fitting (+ buffer to avoid any sliver of split)
-    const finalHeightMm = Math.max(297, contentHeight * pxToMm + 5);
+      // 6. Save PDF
+      return worker.save();
 
-    const opt = {
-      margin: 0,
-      filename: filename,
-      image: { type: 'jpeg', quality: 1.0 }, // Max Quality
-      html2canvas: {
-        scale: 4,  // 4x Resolution (High Quality) to fix "quality not okay"
-        useCORS: true,
-        logging: false,
-        width: targetWidth,
-        windowWidth: targetWidth,
-        scrollY: 0,
-        scrollX: 0
-      },
-      pagebreak: { mode: 'avoid-all' }, // STRICTLY Single Page
-      jsPDF: {
-        unit: 'mm',
-        format: [a4WidthMm, finalHeightMm], // Variable Height Page
-        orientation: 'portrait',
-        compress: true
-      }
-    };
-
-    return html2pdf().set(opt).from(element).save();
+    } finally {
+      // Cleanup
+      document.body.removeChild(container);
+    }
   },
 
   exportPdf: async (id, template) => {
-    // ... preserved ...
     try {
       const params = template ? `?template=${template}` : '';
       const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
