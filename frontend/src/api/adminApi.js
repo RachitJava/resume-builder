@@ -103,6 +103,10 @@ export const adminApi = {
   },
   deleteAiConfig: async (id) => {
     await axios.delete(`${API_URL}/ai-config/${id}`, { headers: getAuthHeaders() });
+  },
+  selectAiKey: async (id, index) => {
+    const response = await axios.post(`${API_URL}/ai-config/${id}/select-key/${index}`, {}, { headers: getAuthHeaders() });
+    return response.data;
   }
 };
 

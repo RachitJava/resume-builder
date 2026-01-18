@@ -117,6 +117,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSelectKey = async (id, index) => {
+    try {
+      await adminApi.selectAiKey(id, index);
+      setSuccess('Active key updated!');
+      await loadAiConfigs();
+    } catch (err) {
+      setError('Failed to update active key');
+    }
+  };
+
   // ===== GENERAL API KEY MANAGEMENT =====
   const loadGeneralApiKeys = async () => {
     try {
@@ -332,6 +342,7 @@ export default function AdminDashboard() {
               setShowAddConfigForm={setShowAddConfigForm}
               newConfig={newConfig}
               setNewConfig={setNewConfig}
+              onSelectKey={handleSelectKey}
             />
 
             <GeneralKeysSection
@@ -376,7 +387,7 @@ export default function AdminDashboard() {
 }
 
 // ===== AI PROVIDER SECTION COMPONENT =====
-function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig, showAddConfigForm, setShowAddConfigForm, newConfig, setNewConfig }) {
+function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig, showAddConfigForm, setShowAddConfigForm, newConfig, setNewConfig, onSelectKey }) {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-6">
@@ -486,6 +497,14 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                           <span className="text-[9px] font-bold uppercase">Ready</span>
                         </div>
+                      )}
+                      {config.currentKeyIndex !== i && (
+                        <button
+                          onClick={() => onSelectKey(config.id, i)}
+                          className="text-[10px] bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 px-2 py-1 rounded transition-colors"
+                        >
+                          Select
+                        </button>
                       )}
                     </div>
                   ))}

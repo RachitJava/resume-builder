@@ -20,29 +20,29 @@ public class SpaController {
         if (Files.exists(dockerPath)) {
             return dockerPath;
         }
-        
+
         // Local development path
         String userDir = System.getProperty("user.dir");
         Path localPath = Paths.get(userDir, "../frontend/dist/index.html");
         if (Files.exists(localPath)) {
             return localPath;
         }
-        
+
         return null;
     }
 
-    @GetMapping(value = {"/", "/login", "/editor", "/editor/**", "/templates", "/job-match"}, 
-                produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = { "/", "/login", "/editor", "/editor/**", "/templates", "/job-match", "/admin",
+            "/admin/**" }, produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<Resource> serveIndex() {
         Path indexPath = getIndexPath();
-        
+
         if (indexPath != null && Files.exists(indexPath)) {
             Resource resource = new FileSystemResource(indexPath);
             return ResponseEntity.ok()
-                .contentType(MediaType.TEXT_HTML)
-                .body(resource);
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(resource);
         }
-        
+
         return ResponseEntity.notFound().build();
     }
 }

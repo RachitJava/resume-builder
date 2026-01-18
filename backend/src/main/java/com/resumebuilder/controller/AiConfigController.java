@@ -82,6 +82,20 @@ public class AiConfigController {
         return ResponseEntity.ok(Map.of("message", "Activated"));
     }
 
+    @PostMapping("/{id}/select-key/{index}")
+    public ResponseEntity<?> selectKey(@RequestHeader(value = "Authorization", required = false) String authHeader,
+            @PathVariable Long id, @PathVariable int index) {
+        if (!authService.isAdmin(authHeader)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required"));
+        }
+        AiProviderConfig config = repository.findById(id).orElseThrow();
+        if (index < 0 || index >= config.getApiKeys().size()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid key index"));
+        }
+        config.setCurrentKeyIndex(index);
+        return ResponseEntity.ok(repository.save(config));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@RequestHeader(value = "Authorization", required = false) String authHeader,
             @PathVariable Long id) {
