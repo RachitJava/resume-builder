@@ -12,19 +12,7 @@ export default defineConfig({
         name: 'DecisiveML - AI Resume Builder',
         short_name: 'DecisiveML',
         description: 'Precision AI-Powered Career Building',
-        theme_color: '#2563eb',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
+        theme_color: '#2563eb'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
