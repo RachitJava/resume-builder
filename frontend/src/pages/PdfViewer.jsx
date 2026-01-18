@@ -159,7 +159,7 @@ export default function PdfViewer() {
 
             {/* PDF Viewer */}
             <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-zinc-900 p-4" ref={containerRef}>
-                <div className="flex justify-center min-h-full pb-8">
+                <div className="flex justify-center min-h-full pb-0">
                     <Document
                         file={pdfData}
                         onLoadSuccess={onDocumentLoadSuccess}
