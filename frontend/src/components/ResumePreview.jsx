@@ -542,7 +542,7 @@ export function ExecutiveTemplate({ resume }) {
           </h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-slate-100 text-slate-700 text-sm rounded">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-slate-100 text-slate-700 text-sm">
                 {skill}
               </span>
             ))}
@@ -621,7 +621,7 @@ export function CreativeTemplate({ resume }) {
         <section className="mb-6">
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-gradient-to-r from-purple-100 to-purple-100 text-purple-700 rounded-full text-sm font-medium">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-gradient-to-r from-purple-100 to-purple-100 text-purple-700 text-sm font-medium">
                 {skill}
               </span>
             ))}
@@ -632,7 +632,7 @@ export function CreativeTemplate({ resume }) {
       {resume.experience?.length > 0 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-purple-600 mb-4 flex items-center gap-2">
-            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500 rounded"></span>
+            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500"></span>
             Experience
           </h2>
           {resume.experience.map((exp, i) => (
@@ -646,7 +646,7 @@ export function CreativeTemplate({ resume }) {
       {resume.education?.length > 0 && (
         <section>
           <h2 className="text-lg font-bold text-purple-600 mb-4 flex items-center gap-2">
-            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500 rounded"></span>
+            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500"></span>
             Education
           </h2>
           {resume.education.map((edu, i) => (
@@ -1136,7 +1136,7 @@ export function TwoColumnTemplate({ resume }) {
       {/* Sidebar */}
       <div className="w-1/3 bg-gray-900 text-white p-4 -ml-6 -my-6 md:-ml-8 md:-my-8 min-h-full">
         <div className="mb-6">
-          <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center text-2xl font-bold mb-3">
+          <div className="w-16 h-16 bg-gray-700 flex items-center justify-center text-2xl font-bold mb-3">
             {resume.fullName?.charAt(0) || '?'}
           </div>
           <h1 className="text-lg font-bold">{resume.fullName || 'Your Name'}</h1>
@@ -1252,7 +1252,7 @@ export function DeveloperTemplate({ resume }) {
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-2">// tech_stack</h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="inline-flex items-center justify-center leading-none px-2 py-1.5 bg-gray-900 text-green-400 rounded text-xs">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-2 py-1.5 bg-gray-900 text-green-400 text-xs">
                 {skill}
               </span>
             ))}
@@ -1308,7 +1308,7 @@ export function DeveloperTemplate({ resume }) {
               {proj.technologies?.length > 0 && (
                 <div className="ml-5 mt-1 flex flex-wrap gap-1">
                   {proj.technologies.map((tech, ti) => (
-                    <span key={ti} className="inline-flex items-center justify-center leading-none px-1.5 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                    <span key={ti} className="inline-flex items-center justify-center leading-none px-1.5 py-1 bg-gray-100 text-gray-700 text-xs">
                       {tech}
                     </span>
                   ))}
