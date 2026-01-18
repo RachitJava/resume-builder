@@ -124,15 +124,15 @@ export default function ResumeForm({ resume, onChange }) {
   ];
 
   return (
-    <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
       {/* Section Navigation */}
-      <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#27272A]">
+      <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-black">
         {sections.map((section) => (
           <button
             key={section.id}
             onClick={() => setActiveSection(section.id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-smooth border-b-2 ${activeSection === section.id
-              ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50 bg-white dark:bg-[#18181B]'
+              ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50 bg-white dark:bg-black'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-[#18181B]/50'
               }`}
           >
@@ -245,7 +245,7 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'experience' && (
           <div className="space-y-5">
             {(resume.experience || []).map((exp, index) => (
-              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Experience {index + 1}</span>
                   <button
@@ -305,7 +305,7 @@ export default function ResumeForm({ resume, onChange }) {
                 </div>
 
                 {/* Service-Based Company Toggle */}
-                <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -361,7 +361,7 @@ export default function ResumeForm({ resume, onChange }) {
                     </div>
 
                     {(exp.clientProjects || []).map((client, clientIndex) => (
-                      <div key={clientIndex} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
+                      <div key={clientIndex} className="p-3 bg-gray-100 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-700 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-gray-900 dark:text-gray-100">Client {clientIndex + 1}</span>
                           <button
@@ -473,7 +473,7 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'education' && (
           <div className="space-y-5">
             {(resume.education || []).map((edu, index) => (
-              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Education {index + 1}</span>
                   <button
@@ -597,7 +597,7 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'projects' && (
           <div className="space-y-5">
             {(resume.projects || []).map((proj, index) => (
-              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Project {index + 1}</span>
                   <button

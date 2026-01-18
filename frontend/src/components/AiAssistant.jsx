@@ -98,7 +98,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
             {/* Chat Panel */}
             <div
                 ref={chatRef}
-                className={`fixed bottom-36 right-6 w-96 max-w-[90vw] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
+                className={`fixed bottom-36 right-6 w-96 max-w-[90vw] bg-white dark:bg-black rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
                     } z-40 flex flex-col`}
                 style={{ height: 'min(500px, 80vh)' }}
             >
@@ -111,7 +111,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-black/50">
                     {messages.map((msg, idx) => (
                         <div
                             key={idx}
@@ -144,20 +144,27 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
                 </div>
 
                 {/* Input */}
-                <form onSubmit={handleSend} className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-b-2xl">
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
+                <form className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black rounded-b-2xl">
+                    <div className="flex gap-2 items-end">
+                        <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="E.g., Add experience at Google..."
-                            className="flex-1 bg-gray-100 dark:bg-gray-800 border-0 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend(e);
+                                }
+                            }}
+                            placeholder="Type a message (Shift+Enter for new line)..."
+                            className="flex-1 bg-gray-100 dark:bg-gray-800 border-0 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 resize-none scrollbar-hide"
+                            rows={2}
                             disabled={isLoading}
                         />
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handleSend}
                             disabled={isLoading || !input.trim()}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full p-2 w-10 h-10 flex items-center justify-center transition-colors"
+                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full p-2 w-10 h-10 flex items-center justify-center transition-colors mb-1"
                         >
                             <svg className="w-4 h-4 translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

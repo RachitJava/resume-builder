@@ -73,8 +73,8 @@ export default function Layout({ children }) {
 
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0A0A0A]">
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] sticky top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div className="min-h-screen bg-white dark:bg-black">
+      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black sticky top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <nav className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 md:gap-3 group">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-gray-900 to-black dark:from-gray-50 dark:to-white flex items-center justify-center group-hover:scale-105 transition-all shadow-lg">
@@ -146,7 +146,7 @@ export default function Layout({ children }) {
 
         {/* Mobile Sidebar/Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-full inset-x-0 bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden animate-slideDown z-40">
+          <div className="lg:hidden absolute top-full inset-x-0 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden animate-slideDown z-40">
             <div className="flex flex-col p-4 space-y-4">
               <NavLinks />
               <Link
@@ -181,7 +181,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* Footer - Fixed to Bottom */}
-      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] py-4 fixed bottom-0 left-0 right-0 z-30">
+      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black py-4 fixed bottom-0 left-0 right-0 z-30">
         <div className="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-sm">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900 dark:text-gray-50">DecisiveML</span>

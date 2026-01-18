@@ -339,13 +339,13 @@ function TemplateSelector({ value, onChange }) {
     { id: 'modern', name: 'Modern', color: 'bg-gray-900', desc: 'Clean & professional' },
     { id: 'classic', name: 'Classic', color: 'bg-stone-700', desc: 'Traditional serif' },
     { id: 'minimal', name: 'Minimal', color: 'bg-neutral-500', desc: 'Ultra clean' },
-    { id: 'executive', name: 'Executive', color: 'bg-slate-700', desc: 'Corporate style' },
+    { id: 'executive', name: 'Executive', color: 'bg-gray-900', desc: 'Corporate style' },
     { id: 'creative', name: 'Creative', color: 'bg-purple-600', desc: 'Bold & colorful' },
     { id: 'ats', name: 'ATS Standard', color: 'bg-zinc-600', desc: 'Simple ATS format' },
     { id: 'atsclean', name: 'ATS Clean', color: 'bg-zinc-400', desc: 'Centered header, serif' },
     { id: 'atsbold', name: 'ATS Bold', color: 'bg-gray-800', desc: 'Bold sections, skills grid' },
     { id: 'atscompact', name: 'ATS Compact', color: 'bg-black', desc: 'Dense, single-page' },
-    { id: 'twocolumn', name: 'Two Column', color: 'bg-blue-600', desc: 'Sidebar layout' },
+    { id: 'twocolumn', name: 'Two Column', color: 'bg-gray-900', desc: 'Sidebar layout' },
     { id: 'developer', name: 'Developer', color: 'bg-emerald-600', desc: 'Tech focused' },
   ];
 

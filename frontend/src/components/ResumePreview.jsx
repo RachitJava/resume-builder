@@ -141,7 +141,7 @@ export default function ResumePreview({ resume, enableCompression = false }) {
     <div className="space-y-4">
       {/* Notifications removed as per user request */}
 
-      <div className="bg-white rounded-none shadow-2xl overflow-hidden overflow-x-auto">
+      <div className="bg-white rounded-none shadow-2xl overflow-hidden">
         {/* A4 page container with dynamic compression */}
         <div
           id="resume-preview-content"
@@ -514,35 +514,35 @@ export function MinimalTemplate({ resume }) {
 export function ExecutiveTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
-      <header className="bg-slate-800 text-white p-10 -m-10 mb-8 rounded-none">
+      <header className="bg-gray-900 text-white p-10 -m-10 mb-8 rounded-none">
         <h1 className="text-2xl font-bold tracking-wide mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
-        <div className="text-slate-300 text-sm">
+        <div className="text-gray-300 text-sm">
           {[resume.email, resume.phone, resume.location].filter(Boolean).join(' | ')}
         </div>
         {(resume.linkedIn || resume.github) && (
-          <div className="text-slate-400 text-sm mt-1">
+          <div className="text-gray-400 text-sm mt-1">
             {[resume.linkedIn, resume.github, resume.website].filter(Boolean).join(' | ')}
           </div>
         )}
       </header>
 
       {resume.summary && (
-        <section className="mb-6 p-4 bg-slate-50 border-l-4 border-slate-800">
-          <h2 className="text-sm font-bold text-slate-700 uppercase mb-2">Executive Summary</h2>
+        <section className="mb-6 p-4 bg-gray-50 border-l-4 border-gray-900">
+          <h2 className="text-sm font-bold text-gray-700 uppercase mb-2">Summary</h2>
           <p className="text-gray-700">{resume.summary}</p>
         </section>
       )}
 
       {resume.skills?.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-bold text-slate-800 uppercase border-b-2 border-slate-800 pb-1 mb-3">
+          <h2 className="text-sm font-bold text-gray-900 uppercase border-b-2 border-gray-900 pb-1 mb-3">
             Core Competencies
           </h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-slate-100 text-slate-700 text-sm">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-gray-100 text-gray-700 text-sm">
                 {skill}
               </span>
             ))}
@@ -552,7 +552,7 @@ export function ExecutiveTemplate({ resume }) {
 
       {resume.experience?.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-bold text-slate-800 uppercase border-b-2 border-slate-800 pb-1 mb-3">
+          <h2 className="text-sm font-bold text-gray-900 uppercase border-b-2 border-gray-900 pb-1 mb-3">
             Professional Experience
           </h2>
           {resume.experience.map((exp, i) => (
@@ -563,7 +563,7 @@ export function ExecutiveTemplate({ resume }) {
 
       {resume.education?.length > 0 && (
         <section className="mb-6">
-          <h2 className="text-sm font-bold text-slate-800 uppercase border-b-2 border-slate-800 pb-1 mb-3">
+          <h2 className="text-sm font-bold text-gray-900 uppercase border-b-2 border-gray-900 pb-1 mb-3">
             Education
           </h2>
           {resume.education.map((edu, i) => (
@@ -577,7 +577,7 @@ export function ExecutiveTemplate({ resume }) {
 
       {resume.certifications?.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-slate-800 uppercase border-b-2 border-slate-800 pb-1 mb-3">
+          <h2 className="text-sm font-bold text-gray-900 uppercase border-b-2 border-gray-900 pb-1 mb-3">
             Certifications & Licenses
           </h2>
           <ul className="space-y-1">
