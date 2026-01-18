@@ -16,6 +16,35 @@ A minimal full-stack resume builder application with custom templates and PDF ex
 - ✅ Export resume as PDF
 - ✅ Persistent storage with H2 database
 - ✅ Responsive design
+- ✅ Mobile apps (Android APK + iOS PWA)
+- ✅ Offline support
+- ✅ AI-powered resume assistance
+
+## 📱 Mobile Apps
+
+### Android
+Download the latest APK from [GitHub Releases](https://github.com/RachitJava/resume-builder/releases)
+
+Or build from Actions:
+1. Go to [GitHub Actions](https://github.com/RachitJava/resume-builder/actions)
+2. Click latest workflow run
+3. Download `DecisiveML-Android-APK` artifact
+
+### iOS (PWA - No App Store Needed!)
+1. Open Safari on your iPhone/iPad
+2. Navigate to: https://resume-builder-app-misty-waterfall-5852.fly.dev/
+3. Tap Share → "Add to Home Screen"
+4. The app installs like a native app!
+
+**Benefits:**
+- ✅ Works exactly like native app
+- ✅ Offline support
+- ✅ Auto-updates
+- ✅ No App Store approval needed
+- ✅ Completely free
+
+See [IOS_DISTRIBUTION_GUIDE.md](./IOS_DISTRIBUTION_GUIDE.md) for more details.
+
 
 ## Project Structure
 
