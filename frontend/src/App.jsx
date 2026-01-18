@@ -9,7 +9,7 @@ import JobMatch from './pages/JobMatch';
 import AdminDashboard from './pages/AdminDashboard';
 import Downloads from './pages/Downloads';
 import PdfViewer from './pages/PdfViewer';
-import UpdateChecker from './components/UpdateChecker';
+
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -93,7 +93,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <UpdateChecker />
+
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

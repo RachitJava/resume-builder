@@ -13,8 +13,22 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(registration => {
+      // Helper to check for updates
+      const checkForUpdate = () => {
+        if (navigator.serviceWorker.controller) {
+          registration.update();
+        }
+      };
+
       // Check for updates when app is opened
       registration.update();
+
+      // Check when app becomes visible again (background update)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkForUpdate();
+        }
+      });
 
       // Auto-reload when new version is available
       registration.addEventListener('updatefound', () => {
