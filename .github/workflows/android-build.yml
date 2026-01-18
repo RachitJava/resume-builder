@@ -43,12 +43,20 @@ jobs:
       - name: Capacitor Sync 🔄
         run: |
           cd frontend
+          rm -rf android/app/src/main/assets/public
+          npx cap copy android
+          npx cap update android
           npx cap sync android
+
+      - name: Clean Android Build 🧹
+        run: |
+          cd frontend/android
+          chmod +x gradlew
+          ./gradlew clean
 
       - name: Build Android APK 📱
         run: |
           cd frontend/android
-          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK Artifact 📤
