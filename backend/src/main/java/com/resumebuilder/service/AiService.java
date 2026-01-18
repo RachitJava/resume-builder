@@ -51,14 +51,19 @@ public class AiService {
             config.model = c.getModelName();
             if (c.getApiKeys() != null && !c.getApiKeys().isEmpty()) {
                 config.key = c.getApiKeys().get(c.getCurrentKeyIndex() % c.getApiKeys().size());
+                log.info("Using AI Config from DATABASE. Provider: {}, KeyIndex: {}, KeyMask: ...{}",
+                        c.getProviderName(), c.getCurrentKeyIndex(),
+                        config.key.length() > 6 ? config.key.substring(config.key.length() - 6) : "short");
             } else {
                 config.key = defaultAiApiKey;
+                log.info("Using AI Config from DATABASE (Fallback to Env Key). Provider: {}", c.getProviderName());
             }
             config.dbConfig = c;
         } else {
             config.url = defaultAiApiUrl;
             config.key = defaultAiApiKey;
             config.model = defaultAiModel;
+            log.info("Using AI Config from APPLICATION.PROPERTIES (No active DB config). URL: {}", config.url);
         }
         return config;
     }
