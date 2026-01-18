@@ -11,12 +11,83 @@ import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 public class PdfService {
 
     private final ResumeService resumeService;
+
+    private static final Logger logger = LoggerFactory.getLogger(PdfService.class);
+
+    /**
+     * Generates a high-fidelity PDF by rendering HTML via Puppeteer (Node.js).
+     */
+    public byte[] generatePdfFromHtml(String htmlContent) {
+        try {
+            logger.info("Starting Puppeteer PDF generation...");
+
+            // Script location in Docker container
+            String scriptPath = "/app/backend/scripts/generate-pdf.js";
+
+            // Local dev fallback
+            if (!new File(scriptPath).exists()) {
+                scriptPath = "backend/scripts/generate-pdf.js";
+            }
+
+            ProcessBuilder pb = new ProcessBuilder("node", scriptPath);
+            // We do NOT redirectErrorStream because we want strict binary output on stdout.
+            // Stderr will be captured separately if needed or logged.
+
+            Process process = pb.start();
+
+            // Write HTML to stdin
+            try (var writer = process.getOutputStream()) {
+                writer.write(htmlContent.getBytes(StandardCharsets.UTF_8));
+                writer.flush();
+            }
+
+            // Read PDF from stdout
+            ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
+            process.getInputStream().transferTo(pdfOut);
+
+            // Read Error from stderr (non-blocking if possible, but here we wait)
+            ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
+            // In a simple flow, we might deadlock if stderr fills up.
+            // But Puppeteer logs are small unless verbose.
+            // Best practice: Read stderr in separate thread or use transferTo if supported
+            // effectively.
+            // For now, assume small stderr.
+
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                throw new RuntimeException("Timeout generating PDF");
+            }
+
+            if (process.exitValue() != 0) {
+                throw new RuntimeException("Puppeteer failed with code " + process.exitValue());
+            }
+
+            byte[] pdfBytes = pdfOut.toByteArray();
+            logger.info("PDF generated successfully. Size: " + pdfBytes.length);
+
+            if (pdfBytes.length == 0) {
+                throw new RuntimeException("Generated PDF is empty");
+            }
+
+            return pdfBytes;
+
+        } catch (Exception e) {
+            logger.error("Failed to generate PDF from HTML", e);
+            throw new RuntimeException("PDF Generation Failed: " + e.getMessage());
+        }
+    }
 
     public byte[] generatePdf(String resumeId, String template, String userId) {
         ResumeDTO resume = resumeService.getById(resumeId, userId);

@@ -32,11 +32,34 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl, fonts, chromium, and nodejs for Puppeteer
+RUN apk add --no-cache \
+  curl \
+  chromium \
+  nss \
+  freetype \
+  harfbuzz \
+  ca-certificates \
+  ttf-freefont \
+  nodejs \
+  npm
+
+# Install puppeteer-core (lightweight, uses installed chromium)
+# We install it in /app/scripts so the Java service can find the node_modules
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+RUN mkdir -p /app/backend/scripts
+WORKDIR /app/backend/scripts
+RUN npm init -y && npm install puppeteer-core
+
+WORKDIR /app
 
 # Copy built backend JAR
 COPY --from=backend-builder /app/backend/target/*.jar app.jar
+
+# Copy PDF generation script
+COPY backend/scripts/generate-pdf.js /app/backend/scripts/
 
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./static
@@ -53,7 +76,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
 
 # Set environment variables
 ENV PORT=8080
-ENV JAVA_OPTS="-Xms128m -Xmx384m -XX:+UseSerialGC -XX:MaxRAM=512m"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC"
 
 # Run the application with explicit binding
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -Dspring.main.lazy-initialization=true -jar app.jar"]

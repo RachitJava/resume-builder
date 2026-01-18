@@ -39,7 +39,7 @@ public class ResumeController {
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @PathVariable String id, 
+            @PathVariable String id,
             @Valid @RequestBody ResumeDTO dto) {
         User user = getAuthenticatedUser(authHeader);
         if (user == null) {
@@ -81,6 +81,31 @@ public class ResumeController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/pdf/export")
+    public ResponseEntity<?> exportPdfFromHtml(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody Map<String, String> payload) {
+        User user = getAuthenticatedUser(authHeader);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
+        String html = payload.get("html");
+        if (html == null || html.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "HTML content required"));
+        }
+
+        byte[] pdf = pdfService.generatePdfFromHtml(html);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "resume.pdf");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdf);
+    }
+
     @GetMapping("/{id}/pdf")
     public ResponseEntity<?> exportPdf(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
@@ -90,13 +115,13 @@ public class ResumeController {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
         }
-        
+
         byte[] pdf = pdfService.generatePdf(id, template, user.getEmail());
-        
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData("attachment", "resume.pdf");
-        
+
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(pdf);
@@ -110,4 +135,3 @@ public class ResumeController {
         return null;
     }
 }
-
