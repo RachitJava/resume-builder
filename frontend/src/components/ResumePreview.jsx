@@ -141,7 +141,7 @@ export default function ResumePreview({ resume, enableCompression = false }) {
     <div className="space-y-4">
       {/* Notifications removed as per user request */}
 
-      <div className="bg-white rounded-xl shadow-2xl overflow-hidden overflow-x-auto">
+      <div className="bg-white rounded-none shadow-2xl overflow-hidden overflow-x-auto">
         {/* A4 page container with dynamic compression */}
         <div
           id="resume-preview-content"
@@ -236,13 +236,9 @@ function ExperienceBlock({ exp, bulletStyle = '•', showBorder = false }) {
 // MODERN TEMPLATE - Clean, professional, ATS-friendly
 // Single column, standard fonts, clear hierarchy
 // ============================================================
-// ============================================================
-// MODERN TEMPLATE - Clean, professional, ATS-friendly
-// Single column, standard fonts, clear hierarchy
-// ============================================================
 export function ModernTemplate({ resume }) {
   return (
-    <div className="font-sans text-sm text-gray-800 leading-relaxed">
+    <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
       {/* Header - Contact at top, not in document header */}
       <header className="text-center mb-5 pb-4 border-b-2 border-blue-600">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -253,104 +249,118 @@ export function ModernTemplate({ resume }) {
           {resume.phone && <span>| {resume.phone}</span>}
           {resume.location && <span>| {resume.location}</span>}
         </div>
-        {(resume.linkedIn || resume.github || resume.website) && (
-          <div className="text-gray-500 text-sm mt-1 space-x-2">
-            {resume.linkedIn && <span>{resume.linkedIn}</span>}
-            {resume.github && <span>| {resume.github}</span>}
-            {resume.website && <span>| {resume.website}</span>}
-          </div>
-        )}
-      </header>
+        {
+          (resume.linkedIn || resume.github || resume.website) && (
+            <div className="text-gray-500 text-sm mt-1 space-x-2">
+              {resume.linkedIn && <span>{resume.linkedIn}</span>}
+              {resume.github && <span>| {resume.github}</span>}
+              {resume.website && <span>| {resume.website}</span>}
+            </div>
+          )
+        }
+      </header >
 
       {/* Professional Summary */}
-      {resume.summary && (
-        <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Professional Summary
-          </h2>
-          <p className="text-gray-700">{resume.summary}</p>
-        </section>
-      )}
+      {
+        resume.summary && (
+          <section className="mb-5">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Professional Summary
+            </h2>
+            <p className="text-gray-700">{resume.summary}</p>
+          </section>
+        )
+      }
 
       {/* Skills - Keywords for ATS */}
-      {resume.skills?.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Technical Skills
-          </h2>
-          <p className="text-gray-700">{resume.skills.join(' • ')}</p>
-        </section>
-      )}
+      {
+        resume.skills?.length > 0 && (
+          <section className="mb-5">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Technical Skills
+            </h2>
+            <p className="text-gray-700">{resume.skills.join(' • ')}</p>
+          </section>
+        )
+      }
 
       {/* Work Experience */}
-      {resume.experience?.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Work Experience
-          </h2>
-          {resume.experience.map((exp, i) => (
-            <ExperienceBlock key={i} exp={exp} bulletStyle="•" />
-          ))}
-        </section>
-      )}
+      {
+        resume.experience?.length > 0 && (
+          <section className="mb-5">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Work Experience
+            </h2>
+            {resume.experience.map((exp, i) => (
+              <ExperienceBlock key={i} exp={exp} bulletStyle="•" />
+            ))}
+          </section>
+        )
+      }
 
       {/* Education */}
-      {resume.education?.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Education
-          </h2>
-          {resume.education.map((edu, i) => (
-            <div key={i} className="mb-3 last:mb-0 break-inside-avoid page-break-inside-avoid">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="font-bold text-gray-900">
-                    {edu.degree}{edu.field && ` in ${edu.field}`}
+      {
+        resume.education?.length > 0 && (
+          <section className="mb-5">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Education
+            </h2>
+            {resume.education.map((edu, i) => (
+              <div key={i} className="mb-3 last:mb-0 break-inside-avoid page-break-inside-avoid">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-bold text-gray-900">
+                      {edu.degree}{edu.field && ` in ${edu.field}`}
+                    </div>
+                    <div className="text-gray-700">{edu.institution}</div>
                   </div>
-                  <div className="text-gray-700">{edu.institution}</div>
+                  <span className="text-gray-600 text-sm">
+                    {edu.startDate && `${edu.startDate} – `}{edu.endDate}
+                  </span>
                 </div>
-                <span className="text-gray-600 text-sm">
-                  {edu.startDate && `${edu.startDate} – `}{edu.endDate}
-                </span>
+                {edu.gpa && <div className="text-gray-600 text-sm">GPA: {edu.gpa}</div>}
               </div>
-              {edu.gpa && <div className="text-gray-600 text-sm">GPA: {edu.gpa}</div>}
-            </div>
-          ))}
-        </section>
-      )}
+            ))}
+          </section>
+        )
+      }
 
       {/* Projects */}
-      {resume.projects?.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Projects
-          </h2>
-          {resume.projects.map((proj, i) => (
-            <div key={i} className="mb-3 last:mb-0">
-              <div className="font-bold text-gray-900">{proj.name}</div>
-              {proj.description && <p className="text-gray-700 text-sm">{proj.description}</p>}
-              {proj.technologies?.length > 0 && (
-                <p className="text-gray-600 text-sm">Technologies: {proj.technologies.join(', ')}</p>
-              )}
-            </div>
-          ))}
-        </section>
-      )}
+      {
+        resume.projects?.length > 0 && (
+          <section className="mb-5">
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Projects
+            </h2>
+            {resume.projects.map((proj, i) => (
+              <div key={i} className="mb-3 last:mb-0">
+                <div className="font-bold text-gray-900">{proj.name}</div>
+                {proj.description && <p className="text-gray-700 text-sm">{proj.description}</p>}
+                {proj.technologies?.length > 0 && (
+                  <p className="text-gray-600 text-sm">Technologies: {proj.technologies.join(', ')}</p>
+                )}
+              </div>
+            ))}
+          </section>
+        )
+      }
 
       {/* Certifications */}
-      {resume.certifications?.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
-            Certifications
-          </h2>
-          <ul className="space-y-1">
-            {resume.certifications.map((cert, i) => (
-              <li key={i} className="text-gray-700">• {cert}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </div>
+      {
+        resume.certifications?.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
+              Certifications
+            </h2>
+            <ul className="space-y-1">
+              {resume.certifications.map((cert, i) => (
+                <li key={i} className="text-gray-700">• {cert}</li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+    </div >
   );
 }
 
@@ -361,8 +371,9 @@ export function ModernTemplate({ resume }) {
 // CLASSIC TEMPLATE - Traditional, serif font, formal
 // ============================================================
 export function ClassicTemplate({ resume }) {
+
   return (
-    <div className="font-serif text-sm text-gray-800 leading-relaxed">
+    <div className="font-serif text-sm text-gray-800 leading-relaxed min-h-full">
       <header className="text-center mb-6 pb-4 border-b-2 border-gray-800">
         <h1 className="text-3xl font-bold mb-2">{resume.fullName || 'Your Name'}</h1>
         <div className="text-gray-600">
@@ -502,8 +513,8 @@ export function MinimalTemplate({ resume }) {
 // ============================================================
 export function ExecutiveTemplate({ resume }) {
   return (
-    <div className="font-sans text-sm text-gray-800 leading-relaxed">
-      <header className="bg-slate-800 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
+    <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
+      <header className="bg-slate-800 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8 rounded-none">
         <h1 className="text-2xl font-bold tracking-wide mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
@@ -590,8 +601,8 @@ export function ExecutiveTemplate({ resume }) {
 // ============================================================
 export function CreativeTemplate({ resume }) {
   return (
-    <div className="font-sans text-sm text-gray-800 leading-relaxed">
-      <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
+    <div className="font-sans text-sm text-gray-800 leading-relaxed min-h-full">
+      <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8 rounded-none">
         <h1 className="text-3xl font-black mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
@@ -950,7 +961,7 @@ export function AtsBoldTemplate({ resume }) {
               {exp.serviceBased && exp.clientProjects?.length > 0 ? (
                 <div className="mt-2 ml-2 space-y-2">
                   {exp.clientProjects.map((client, ci) => (
-                    <div key={ci} className="bg-gray-50 p-2 rounded">
+                    <div key={ci} className="bg-gray-50 p-2">
                       <div className="flex justify-between">
                         <span className="font-semibold text-sm">Client: {client.clientName}</span>
                         <span className="text-gray-500 text-sm">{client.startDate} – {client.endDate || 'Present'}</span>
@@ -1121,7 +1132,7 @@ export function AtsCompactTemplate({ resume }) {
 // ============================================================
 export function TwoColumnTemplate({ resume }) {
   return (
-    <div className="font-sans text-sm text-gray-800 flex gap-6">
+    <div className="font-sans text-sm text-gray-800 flex gap-6 min-h-full">
       {/* Sidebar */}
       <div className="w-1/3 bg-gray-900 text-white p-4 -ml-6 -my-6 md:-ml-8 md:-my-8 min-h-full">
         <div className="mb-6">
@@ -1212,7 +1223,7 @@ export function DeveloperTemplate({ resume }) {
   return (
     <div className="font-mono text-sm text-gray-800 bg-gray-50 p-4 -m-6 md:-m-8 min-h-full">
       {/* Terminal-style header */}
-      <div className="bg-gray-900 text-green-400 p-4 rounded-lg mb-6">
+      <div className="bg-gray-900 text-green-400 p-6 -mx-4 -mt-4 mb-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
           <span className="w-3 h-3 rounded-full bg-gray-500"></span>
@@ -1230,14 +1241,14 @@ export function DeveloperTemplate({ resume }) {
       </div>
 
       {resume.summary && (
-        <section className="mb-5 bg-white p-4 rounded-lg border border-gray-200">
+        <section className="mb-5 bg-white p-4 border-b border-gray-200">
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-2">// README.md</h2>
           <p className="text-gray-700 font-sans">{resume.summary}</p>
         </section>
       )}
 
       {resume.skills?.length > 0 && (
-        <section className="mb-5 bg-white p-4 rounded-lg border border-gray-200">
+        <section className="mb-5 bg-white p-4 border-b border-gray-200">
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-2">// tech_stack</h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
@@ -1250,7 +1261,7 @@ export function DeveloperTemplate({ resume }) {
       )}
 
       {resume.experience?.length > 0 && (
-        <section className="mb-5 bg-white p-4 rounded-lg border border-gray-200">
+        <section className="mb-5 bg-white p-4 border-b border-gray-200">
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-3">// work_history</h2>
           {resume.experience.map((exp, i) => (
             <div key={i} className="mb-4 last:mb-0 font-sans">
@@ -1263,7 +1274,7 @@ export function DeveloperTemplate({ resume }) {
               {exp.serviceBased && exp.clientProjects?.length > 0 ? (
                 <div className="ml-5 mt-2 space-y-2">
                   {exp.clientProjects.map((client, ci) => (
-                    <div key={ci} className="bg-gray-50 p-2 rounded border-l-2 border-green-500">
+                    <div key={ci} className="bg-gray-50 p-2 border-l-2 border-green-500">
                       <span className="text-green-500 font-mono text-xs">└──</span>
                       <span className="font-medium text-xs ml-1">{client.clientName}</span>
                       <span className="text-gray-400 text-xs"> ({client.startDate} → {client.endDate || 'present'})</span>
@@ -1285,7 +1296,7 @@ export function DeveloperTemplate({ resume }) {
       )}
 
       {resume.projects?.length > 0 && (
-        <section className="bg-white p-4 rounded-lg border border-gray-200">
+        <section className="bg-white p-4 border-b border-gray-200">
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-3">// projects</h2>
           {resume.projects.map((proj, i) => (
             <div key={i} className="mb-3 last:mb-0 font-sans">

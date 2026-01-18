@@ -26,7 +26,7 @@ console.log('🌐 API Configuration:', {
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 30000 // 30 second timeout
+    timeout: 120000 // 120 second timeout
 });
 
 // Add auth interceptor

@@ -31,6 +31,7 @@ export default function Editor() {
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('form');
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   const previewRef = useRef(null);
 
@@ -135,16 +136,31 @@ export default function Editor() {
     if (!savedResume) return;
 
     try {
-      // Use client-side PDF generation for exact preview match
       const previewElement = previewRef.current;
       if (!previewElement) {
         alert('Preview not loaded');
         return;
       }
 
+      // Start Progress Loader
+      setDownloadProgress(1);
+      const timer = setInterval(() => {
+        setDownloadProgress(prev => {
+          if (prev >= 90) return 90; // Stall at 90%
+          return prev + 3; // +3% every 500ms -> ~15s to 90%
+        });
+      }, 500);
+
       await resumeApi.exportPdfFromPreview(previewElement, `${savedResume.fullName || 'resume'}.pdf`);
+
+      // Finish
+      clearInterval(timer);
+      setDownloadProgress(100);
+      setTimeout(() => setDownloadProgress(0), 1000); // Close after 1s
+
     } catch (error) {
       console.error('Failed to export PDF:', error);
+      setDownloadProgress(0);
       alert(`Failed to download PDF: ${error.message || 'Unknown error'}. Please try again.`);
     }
   };
@@ -163,9 +179,9 @@ export default function Editor() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0A0A0A] flex flex-col font-body">
+    <div className="h-screen bg-white dark:bg-[#0A0A0A] flex flex-col font-body overflow-hidden">
       {/* Header */}
-      <header className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 px-3 md:px-6 py-3 flex items-center justify-between sticky top-0 z-50 gap-2">
+      <header className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 px-3 md:px-6 py-3 flex items-center justify-between sticky top-0 z-50 gap-2 shrink-0" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
           <button onClick={() => navigate('/')} className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-50 transition-colors flex items-center gap-1">
             <span className="text-xl md:text-sm">←</span>
@@ -248,8 +264,8 @@ export default function Editor() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 w-full px-2 md:px-4 lg:px-6 py-4 md:py-6">
-        <div className="lg:grid lg:grid-cols-2 lg:gap-4 xl:gap-6 items-start max-w-[1920px] mx-auto">
+      <div className="flex-1 w-full px-2 md:px-4 lg:px-6 py-4 md:py-6 overflow-y-auto scrollbar-hide">
+        <div className="lg:grid lg:grid-cols-[40%_60%] lg:gap-4 xl:gap-6 items-start max-w-[1920px] mx-auto">
           {/* Form Section */}
           <div className={`${activeTab === 'form' ? 'block' : 'hidden'} lg:block space-y-6`}>
             <ResumeForm resume={resume} onChange={setResume} />
@@ -267,7 +283,52 @@ export default function Editor() {
 
       {/* AI Assistant Chat Bot */}
       <AiAssistant currentResume={resume} onUpdateResume={setResume} />
-    </div>
+
+      {/* PDF Download Loader Overlay */}
+      {downloadProgress > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center flex-col gap-4">
+          <div className="bg-white dark:bg-gray-900 p-10 rounded-2xl shadow-2xl flex flex-col items-center border border-gray-100 dark:border-gray-800">
+            {/* SVG Circular Loader - Larger & Gradient */}
+            <div className="relative w-32 h-32 mb-4">
+              <svg className="w-full h-full transform" viewBox="0 0 100 100">
+                <circle
+                  className="text-gray-100 dark:text-gray-800 stroke-current"
+                  strokeWidth="8"
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="transparent"
+                ></circle>
+                <circle
+                  className="transition-all duration-300 ease-out drop-shadow-md"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  fill="transparent"
+                  strokeDasharray="251.2"
+                  strokeDashoffset={251.2 - (251.2 * downloadProgress) / 100}
+                  stroke="url(#loaderGradient)"
+                  transform="rotate(-90 50 50)"
+                ></circle>
+                <defs>
+                  <linearGradient id="loaderGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#06b6d4" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">{downloadProgress}%</span>
+              </div>
+            </div>
+            <p className="text-lg font-semibold text-gray-900 dark:text-white animate-pulse">Generating PDF...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please wait while we prepare your document</p>
+          </div>
+        </div>
+      )}
+    </div >
   );
 }
 

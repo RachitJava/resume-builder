@@ -8,13 +8,17 @@ const fs = require('fs');
 
         // Launch browser (using system chromium)
         const browser = await puppeteer.launch({
-            executablePath: '/usr/bin/chromium-browser',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
-                '--font-render-hinting=none' // Better text kerning
+                '--disable-software-rasterizer',
+                '--font-render-hinting=none',
+                '--no-zygote',
+                '--single-process', // Aggressive memory saving
+                '--disable-extensions'
             ],
             headless: 'new'
         });
@@ -36,11 +40,11 @@ const fs = require('fs');
         });
 
         // Convert px to mm (approx) -> 794px = 210mm -> 1px = 0.264mm
-        // Add 10mm buffer
-        const heightMm = Math.ceil(bodyHeight * 0.264583) + 10;
+        // TIGHT FIT: Add minimal buffer (1mm) to prevent overflow but remove "extra" space
+        const heightMm = Math.ceil(bodyHeight * 0.264583) + 1;
 
-        // Ensure A4 min height
-        const finalHeight = Math.max(297, heightMm);
+        // Use exact height (do not force A4 minimum) to avoid extra underlay at bottom
+        const finalHeight = Math.max(50, heightMm); // Min 50mm just for safety
 
         const pdf = await page.pdf({
             width: '210mm',

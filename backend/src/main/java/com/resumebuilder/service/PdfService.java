@@ -29,6 +29,7 @@ public class PdfService {
      * Generates a high-fidelity PDF by rendering HTML via Puppeteer (Node.js).
      */
     public byte[] generatePdfFromHtml(String htmlContent) {
+        Process process = null;
         try {
             logger.info("Starting Puppeteer PDF generation...");
 
@@ -42,9 +43,8 @@ public class PdfService {
 
             ProcessBuilder pb = new ProcessBuilder("node", scriptPath);
             // We do NOT redirectErrorStream because we want strict binary output on stdout.
-            // Stderr will be captured separately if needed or logged.
 
-            Process process = pb.start();
+            process = pb.start();
 
             // Write HTML to stdin
             try (var writer = process.getOutputStream()) {
@@ -56,15 +56,8 @@ public class PdfService {
             ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
             process.getInputStream().transferTo(pdfOut);
 
-            // Read Error from stderr (non-blocking if possible, but here we wait)
-            ByteArrayOutputStream errorOut = new ByteArrayOutputStream();
-            // In a simple flow, we might deadlock if stderr fills up.
-            // But Puppeteer logs are small unless verbose.
-            // Best practice: Read stderr in separate thread or use transferTo if supported
-            // effectively.
-            // For now, assume small stderr.
-
-            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            // Wait - extended timeout for safety
+            boolean finished = process.waitFor(90, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
                 throw new RuntimeException("Timeout generating PDF");
@@ -75,6 +68,8 @@ public class PdfService {
             }
 
             byte[] pdfBytes = pdfOut.toByteArray();
+            pdfOut.close();
+
             logger.info("PDF generated successfully. Size: " + pdfBytes.length);
 
             if (pdfBytes.length == 0) {
@@ -86,6 +81,13 @@ public class PdfService {
         } catch (Exception e) {
             logger.error("Failed to generate PDF from HTML", e);
             throw new RuntimeException("PDF Generation Failed: " + e.getMessage());
+        } finally {
+            // Aggressive Cleanup
+            if (process != null) {
+                process.destroyForcibly();
+            }
+            // Explicit GC as requested to handle sequential high-memory tasks on small VM
+            System.gc();
         }
     }
 

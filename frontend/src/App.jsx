@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Templates from './pages/Templates';
 import JobMatch from './pages/JobMatch';
 import AdminDashboard from './pages/AdminDashboard';
+import Downloads from './pages/Downloads';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -69,6 +70,11 @@ function AppRoutes() {
         <Route path="admin" element={
           <ProtectedRoute>
             <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="downloads" element={
+          <ProtectedRoute>
+            <Downloads />
           </ProtectedRoute>
         } />
       </Route>

@@ -84,7 +84,7 @@ export default function ResumeUpload() {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={() => fileInputRef.current?.click()}
-      className={`relative border-2 border-dashed rounded-2xl p-6 md:p-8 text-center cursor-pointer transition-all ${isDragging
+      className={`relative border-2 border-dashed rounded-2xl p-4 md:p-8 text-center cursor-pointer transition-all ${isDragging
         ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-white/10'
         : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/30'
         } ${uploading ? 'pointer-events-none opacity-60' : ''}`}

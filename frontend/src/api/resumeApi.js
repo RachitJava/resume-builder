@@ -108,23 +108,53 @@ export const resumeApi = {
         const fileName = filename || 'resume.pdf';
 
         if (Capacitor.isNativePlatform()) {
-          const reader = new FileReader();
-          const base64Data = await new Promise((res, rej) => {
-            reader.onloadend = () => res(reader.result.split(',')[1]);
-            reader.onerror = rej;
-            reader.readAsDataURL(blob);
-          });
+          try {
+            // Check permissions first
+            const permissionStatus = await Filesystem.checkPermissions();
+            if (permissionStatus.publicStorage !== 'granted') {
+              const request = await Filesystem.requestPermissions();
+              if (request.publicStorage !== 'granted') throw new Error('Storage permission denied');
+            }
 
-          await Filesystem.writeFile({
-            path: fileName,
-            data: base64Data,
-            directory: Directory.Documents,
-            recursive: true
-          });
-          alert(`PDF saved successfully to Documents/${fileName}`);
-          resolve(true);
+            const reader = new FileReader();
+            const base64Data = await new Promise((res, rej) => {
+              reader.onloadend = () => res(reader.result.split(',')[1]);
+              reader.onerror = rej;
+              reader.readAsDataURL(blob);
+            });
+
+            // Try saving with original filename
+            try {
+              await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: Directory.Documents,
+                recursive: true
+              });
+              alert(`PDF saved successfully to Documents/${fileName}`);
+              resolve(true);
+            } catch (writeError) {
+              console.warn('Overwrite failed, trying unique name:', writeError);
+              // Fallback: Append timestamp if overwrite fails (EACCES)
+              const uniqueName = fileName.replace('.pdf', `_${Date.now()}.pdf`);
+              await Filesystem.writeFile({
+                path: uniqueName,
+                data: base64Data,
+                directory: Directory.Documents,
+                recursive: true
+              });
+              alert(`PDF saved successfully to Documents/${uniqueName}`);
+              resolve(true);
+            }
+
+          } catch (e) {
+            console.error('Native Save Error:', e);
+            alert(`Failed to save PDF: ${e.message}`);
+            reject(e);
+          }
 
         } else {
+          // Web Fallback
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -137,10 +167,9 @@ export const resumeApi = {
           }, 1000);
           resolve(true);
         }
-
       } catch (error) {
         console.error('PDF Export Error:', error);
-        alert('Failed to generate PDF. Please try again.');
+        alert(`Failed to generate PDF: ${error.message || 'Unknown error'}`);
         reject(error);
       }
     });

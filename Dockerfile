@@ -76,7 +76,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
 
 # Set environment variables
 ENV PORT=8080
-ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseSerialGC"
+ENV JAVA_OPTS="-Xms128m -Xmx256m -XX:+UseSerialGC"
 
 # Run the application with explicit binding
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -Dspring.main.lazy-initialization=true -jar app.jar"]

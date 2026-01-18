@@ -70,6 +70,12 @@ export default function Layout({ children }) {
     </>
   );
 
+  const isEditor = location.pathname.startsWith('/editor');
+
+  if (isEditor) {
+    return <>{children || <Outlet />}</>;
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#0A0A0A]">
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] sticky top-0 z-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -144,13 +150,26 @@ export default function Layout({ children }) {
 
         {/* Mobile Sidebar/Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-16 inset-x-0 bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden animate-slideDown z-40">
+          <div className="lg:hidden absolute top-full inset-x-0 bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden animate-slideDown z-40">
             <div className="flex flex-col p-4 space-y-4">
               <NavLinks />
+              <Link
+                to="/downloads"
+                onClick={() => setIsMenuOpen(false)}
+                className={`text-sm font-medium transition-smooth flex items-center gap-1 ${location.pathname === '/downloads'
+                  ? 'text-gray-900 dark:text-gray-50'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  }`}
+              >
+                <span className="text-xs">📂</span> Downloads
+              </Link>
               <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
                 <p className="text-xs text-gray-500 mb-2">{user?.email}</p>
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    logout();
+                  }}
                   className="w-full text-left text-sm font-medium text-red-500 py-2"
                 >
                   Sign out
@@ -161,27 +180,19 @@ export default function Layout({ children }) {
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 flex-1">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 pb-20">
         {children || <Outlet />}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* Footer - Fixed to Bottom */}
+      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] py-4 fixed bottom-0 left-0 right-0 z-30">
+        <div className="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gray-900 dark:bg-gray-50 flex items-center justify-center">
-              <svg className="w-3 h-3 text-white dark:text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
             <span className="font-semibold text-gray-900 dark:text-gray-50">DecisiveML</span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Developed by <span className="font-medium text-gray-900 dark:text-gray-200">Rachit</span>
+          <p className="text-gray-500 dark:text-gray-400 text-xs">
+            By <span className="font-medium">Rachit</span>
           </p>
-          <div className="flex items-center gap-6">
-            <span className="text-xs text-gray-400 dark:text-gray-500">© 2026 DecisiveML. All rights reserved.</span>
-          </div>
         </div>
       </footer>
     </div>

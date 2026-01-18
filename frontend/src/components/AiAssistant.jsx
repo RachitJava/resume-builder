@@ -81,7 +81,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
             <button
                 ref={toggleRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-xl transition-all duration-300 ${isOpen ? 'bg-red-500 rotate-45' : 'bg-blue-600 hover:bg-blue-700'
+                className={`fixed bottom-20 right-6 z-50 p-4 rounded-full shadow-xl transition-all duration-300 ${isOpen ? 'bg-red-500 rotate-45' : 'bg-blue-600 hover:bg-blue-700'
                     } text-white`}
             >
                 {isOpen ? (
@@ -98,7 +98,7 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
             {/* Chat Panel */}
             <div
                 ref={chatRef}
-                className={`fixed bottom-24 right-6 w-96 max-w-[90vw] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
+                className={`fixed bottom-36 right-6 w-96 max-w-[90vw] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
                     } z-40 flex flex-col`}
                 style={{ height: 'min(500px, 80vh)' }}
             >

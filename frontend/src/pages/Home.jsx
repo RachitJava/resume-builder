@@ -70,7 +70,7 @@ export default function Home() {
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="text-center space-y-4 py-6">
-        <h1 className="font-display text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-50">
+        <h1 className="font-display text-3xl md:text-5xl font-bold text-gray-900 dark:text-gray-50">
           Build Your <span className="text-black dark:text-white">Perfect Resume</span>
         </h1>
         <p className="text-gray-700 dark:text-gray-300 dark:text-gray-400 text-lg max-w-2xl mx-auto">
@@ -171,7 +171,7 @@ export default function Home() {
                 <div
                   key={resume.id}
                   onClick={() => navigate(`/editor/${resume.id}`)}
-                  className="group bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-5 cursor-pointer 
+                  className="group w-full overflow-hidden bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl p-4 cursor-pointer 
                              hover:border-gray-300 dark:border-gray-700 hover:bg-white dark:bg-[#18181B] transition-smooth"
                 >
                   <div className="flex items-start justify-between mb-4">
