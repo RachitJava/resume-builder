@@ -67,6 +67,16 @@ export const resumeApi = {
         const notifications = cloned.querySelectorAll('[class*="toast"], [class*="notification"]');
         notifications.forEach(n => n.remove());
 
+        // Remove shadows and scrollbars from the clone and all details
+        const allElements = cloned.querySelectorAll('*');
+        [cloned, ...allElements].forEach(el => {
+          // Remove Tailwind shadow classes
+          el.classList.remove('shadow-2xl', 'shadow-xl', 'shadow-lg', 'shadow-md', 'shadow-sm', 'shadow');
+
+          // Remove scroll containers to prevent scrollbars in PDF
+          el.classList.remove('overflow-x-auto', 'overflow-y-auto', 'overflow-auto', 'overflow-scroll');
+        });
+
         // 3. Build Full HTML Payload
         // We force background white and reset margins for the rendering engine
         const htmlContent = `
@@ -83,6 +93,9 @@ export const resumeApi = {
                         padding: 0 !important;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
+                    }
+                    * {
+                        box-shadow: none !important;
                     }
                     /* Ensure Single Page behavior visually */
                     .resume-page {
