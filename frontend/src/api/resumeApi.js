@@ -1,5 +1,4 @@
 import api from './config';
-import html2pdf from 'html2pdf.js';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 
@@ -35,82 +34,121 @@ export const resumeApi = {
     return response.data;
   },
 
-  // Client-side PDF generation using PIXEL-PERFECT ONE PAGE STRATEGY
-  // 1. Capture High-Res Canvas (Scale 4)
-  // 2. Set PDF Page Size = EXACT Canvas Dimensions (in Pixels)
-  // 3. This guarantees exactly 1 Page, High Quality, No Splits.
+  // Client-side PDF generation using SMART VECTOR PRINT strategy.
+  // 1. Vector Quality (Small size, High sharpness).
+  // 2. Custom Page Size (Matches content length EXACTLY to prevent splits).
+  // 3. Strict Centering (Fixes alignment).
   exportPdfFromPreview: async (previewElement, filename = 'resume.pdf') => {
-    // 1. Clone & Prep
-    const element = previewElement.cloneNode(true);
-    const notifications = element.querySelectorAll('[class*="toast"], [class*="notification"]');
-    notifications.forEach(n => n.remove());
+    return new Promise((resolve) => {
+      // 1. Calculate required dimensions
+      const cloned = previewElement.cloneNode(true);
+      cloned.style.visibility = 'hidden';
+      cloned.style.position = 'absolute';
+      cloned.style.width = '210mm'; // Standard detailed width
+      document.body.appendChild(cloned);
 
-    const targetWidth = 794;
-    element.style.width = `${targetWidth}px`;
-    element.style.margin = '0'; // Margin handled by wrapper
-    element.style.padding = '0';
-    element.style.background = 'white';
-    element.style.transform = 'none';
-    element.style.minHeight = '1123px';
+      const contentHeightPx = cloned.scrollHeight;
+      document.body.removeChild(cloned);
 
-    // 2. Wrap for Centering
-    const wrapper = document.createElement('div');
-    wrapper.style.width = `${targetWidth}px`;
-    wrapper.style.display = 'flex';
-    wrapper.style.justifyContent = 'center';
-    wrapper.style.background = 'white';
-    wrapper.appendChild(element);
+      // Convert height to mm (approx 96dpi)
+      const heightMm = Math.ceil(contentHeightPx * 0.264583) + 10; // +10mm buffer
+      const pageWidthMm = 210;
 
-    // Append hidden
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.width = `${targetWidth}px`;
-    container.appendChild(wrapper);
-    document.body.appendChild(container); // Mount to ensure rendering
+      // Ensure specific minimum height (A4)
+      const finalHeightMm = Math.max(297, heightMm);
 
-    try {
-      // 3. Initialize Worker
-      const worker = html2pdf().from(wrapper).set({
-        margin: 0,
-        filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 4, // 4x Quality
-          useCORS: true,
-          logging: false,
-          width: targetWidth,
-          windowWidth: targetWidth
-        },
-        pagebreak: { mode: 'avoid-all' } // Safety
+      // 2. Create Print Iframe
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      const content = previewElement.cloneNode(true);
+
+      // Clean UI
+      const notifications = content.querySelectorAll('[class*="toast"], [class*="notification"]');
+      notifications.forEach(n => n.remove());
+
+      doc.open();
+      doc.write('<!DOCTYPE html><html><head><title>' + filename + '</title>');
+
+      // Copy app styles
+      const styles = document.querySelectorAll('link[rel="stylesheet"], style');
+      styles.forEach(style => {
+        doc.write(style.outerHTML);
       });
 
-      // 4. Generate Canvas first to get dimensions
-      // internal abstraction allows accessing 'canvas' token
-      const canvas = await worker.toCanvas().get('canvas');
+      // 3. Inject Smart Print CSS
+      doc.write(`
+        <style>
+          /* DYNAMIC PAGE SIZE: Forces browser to create a single custom-length page */
+          @page {
+            size: ${pageWidthMm}mm ${finalHeightMm}mm;
+            margin: 0; 
+          }
 
-      // 5. Force PDF Page Size to Match Canvas EXACTLY
-      // Use 'px' units to map 1:1
-      worker.set({
-        jsPDF: {
-          unit: 'px',
-          format: [canvas.width, canvas.height],
-          orientation: (canvas.width > canvas.height) ? 'landscape' : 'portrait',
-          compress: true
-        }
-      });
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
 
-      // 6. Save PDF
-      return worker.save();
+          /* FORCE CENTERING: Use Flexbox on body to strictly center the resume container */
+          body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+          }
 
-    } finally {
-      // Cleanup
-      document.body.removeChild(container);
-    }
+          /* RESUME CONTAINER: Fixed Width, No Margins (Body handles centering) */
+          .resume-page {
+            width: 210mm !important;
+            max-width: 210mm !important;
+            min-height: ${finalHeightMm}mm; /* Match page height */
+            margin: 0 !important;
+            box-shadow: none !important;
+            background: white;
+            transform: none !important;
+          }
+
+          /* Hide UI */
+          .no-print { display: none !important; }
+        </style>
+      `);
+
+      doc.write('</head><body>');
+      doc.write(content.outerHTML);
+      doc.write('</body></html>');
+      doc.close();
+
+      // 4. Print
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+            resolve(true);
+          }, 2000);
+        }, 1000);
+      };
+    });
   },
 
   exportPdf: async (id, template) => {
+    // ... preserved ...
     try {
       const params = template ? `?template=${template}` : '';
       const response = await api.get(`${API_URL}/${id}/pdf${params}`, {
