@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -26,17 +27,24 @@ export default function PdfViewer() {
     }, [fileName]);
 
     useEffect(() => {
+        // Hide body overflow to prevent double scrolling
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+
+    useEffect(() => {
         // Responsive PDF width
         const updateWidth = () => {
             if (containerRef.current) {
-                setPageWidth(containerRef.current.clientWidth);
+                setPageWidth(containerRef.current.clientWidth - 32); // Subtract padding
             }
         };
 
         window.addEventListener('resize', updateWidth);
         updateWidth();
 
-        // Give a slight delay for layout to settle
         setTimeout(updateWidth, 100);
 
         return () => window.removeEventListener('resize', updateWidth);
@@ -59,8 +67,6 @@ export default function PdfViewer() {
                 directory: Directory.Documents
             });
 
-            // React-pdf can accept base64 directly or Blob
-            // Using blob is usually cleaner for memory
             const blob = base64ToBlob(data.data, 'application/pdf');
             setPdfData(blob);
             setLoading(false);
@@ -77,39 +83,31 @@ export default function PdfViewer() {
 
     const handleShare = async () => {
         try {
-            const data = await Filesystem.readFile({
+            // Get the file URI
+            const uriResult = await Filesystem.getUri({
                 path: fileName,
                 directory: Directory.Documents
             });
 
-            const blob = base64ToBlob(data.data, 'application/pdf');
-            const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                await navigator.share({
-                    files: [pdfFile],
-                    title: fileName,
-                    text: 'Sharing my resume'
-                });
-            } else {
-                // Fallback: Download
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Share using Capacitor Share plugin
+            await Share.share({
+                title: fileName,
+                text: 'Sharing my resume',
+                url: uriResult.uri,
+                dialogTitle: 'Share Resume'
+            });
         } catch (e) {
             console.error('Share failed:', e);
-            alert('Could not share file: ' + e.message);
+            // Fallback only if user cancelled isn't the error
+            if (e.message !== 'Share canceled') {
+                alert('Could not share file: ' + e.message);
+            }
         }
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-black">
                 <div className="w-8 h-8 border-2 border-gray-900 dark:border-white border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
@@ -117,7 +115,7 @@ export default function PdfViewer() {
 
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-black p-4">
                 <div className="text-center">
                     <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
                     <button
@@ -132,9 +130,9 @@ export default function PdfViewer() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black flex flex-col">
+        <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-black flex flex-col">
             {/* Header with Share Button */}
-            <div className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+            <div className="bg-white dark:bg-[#18181B] border-b border-gray-200 dark:border-gray-800 p-4 pt-12 md:pt-4 flex items-center justify-between shadow-sm flex-shrink-0">
                 <button
                     onClick={() => navigate('/downloads')}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
@@ -144,7 +142,7 @@ export default function PdfViewer() {
                     </svg>
                 </button>
 
-                <h1 className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1 mx-4">
+                <h1 className="text-sm font-medium text-gray-900 dark:text-white truncate flex-1 mx-4 text-center">
                     {fileName}
                 </h1>
 
@@ -159,9 +157,9 @@ export default function PdfViewer() {
                 </button>
             </div>
 
-            {/* PDF Viewer using React-PDF */}
-            <div className="flex-1 overflow-auto bg-gray-100 dark:bg-zinc-900 p-4" ref={containerRef}>
-                <div className="flex justify-center min-h-full">
+            {/* PDF Viewer */}
+            <div className="flex-1 overflow-y-auto bg-gray-100 dark:bg-zinc-900 p-4" ref={containerRef}>
+                <div className="flex justify-center min-h-full pb-8">
                     <Document
                         file={pdfData}
                         onLoadSuccess={onDocumentLoadSuccess}
@@ -172,7 +170,7 @@ export default function PdfViewer() {
                         }
                         error={
                             <div className="text-red-500 text-center p-10">
-                                Failed to load PDF. Please try sharing/downloading it instead.
+                                Failed to load PDF.
                             </div>
                         }
                         className="shadow-lg"
@@ -182,7 +180,7 @@ export default function PdfViewer() {
                                 key={`page_${index + 1}`}
                                 pageNumber={index + 1}
                                 width={pageWidth ? Math.min(pageWidth, 800) : 350}
-                                className="mb-4 bg-white"
+                                className="mb-4 bg-white last:mb-0"
                                 renderTextLayer={false}
                                 renderAnnotationLayer={false}
                             />
