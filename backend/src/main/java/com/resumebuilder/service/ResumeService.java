@@ -17,27 +17,36 @@ public class ResumeService {
     private final ResumeRepository repository;
     private final ObjectMapper objectMapper;
 
-    public ResumeDTO create(ResumeDTO dto) {
+    public ResumeDTO create(ResumeDTO dto, String userId) {
         Resume resume = toEntity(dto);
+        resume.setUserId(userId);
         resume = repository.save(resume);
         return toDTO(resume);
     }
 
-    public ResumeDTO update(String id, ResumeDTO dto) {
-        Resume existing = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resume not found: " + id));
+    public ResumeDTO update(String id, ResumeDTO dto, String userId) {
+        Resume existing = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Resume not found or access denied: " + id));
 
         updateEntity(existing, dto);
         existing = repository.save(existing);
         return toDTO(existing);
     }
 
-    public ResumeDTO getById(String id) {
-        Resume resume = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resume not found: " + id));
+    public ResumeDTO getById(String id, String userId) {
+        Resume resume = repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Resume not found or access denied: " + id));
         return toDTO(resume);
     }
 
+    public List<ResumeDTO> getAllByUser(String userId) {
+        return repository.findByUserIdOrderByUpdatedAtDesc(userId)
+                .stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    // Keep this for backward compatibility (internal use only)
     public List<ResumeDTO> getAll() {
         return repository.findAllByOrderByUpdatedAtDesc()
                 .stream()
@@ -45,13 +54,19 @@ public class ResumeService {
                 .toList();
     }
 
-    public void delete(String id) {
-        if (!repository.existsById(id)) {
-            throw new RuntimeException("Resume not found: " + id);
+    public void delete(String id, String userId) {
+        if (!repository.existsByIdAndUserId(id, userId)) {
+            throw new RuntimeException("Resume not found or access denied: " + id);
         }
         repository.deleteById(id);
     }
 
+    public Resume getEntityById(String id, String userId) {
+        return repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new RuntimeException("Resume not found or access denied: " + id));
+    }
+    
+    // Internal method for PDF service
     public Resume getEntityById(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Resume not found: " + id));

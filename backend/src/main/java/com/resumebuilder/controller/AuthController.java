@@ -28,18 +28,19 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+    public ResponseEntity<?> getCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
         String token = extractToken(authHeader);
         User user = authService.validateToken(token);
-        
+
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
-        
+
         return ResponseEntity.ok(Map.of(
-            "id", user.getId(),
-            "email", user.getEmail()
-        ));
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "isAdmin", user.isAdmin()));
     }
 
     @PostMapping("/logout")
@@ -58,4 +59,3 @@ public class AuthController {
         return null;
     }
 }
-

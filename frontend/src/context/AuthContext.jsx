@@ -18,7 +18,13 @@ export function AuthProvider({ children }) {
         const userData = await authApi.getCurrentUser(token);
         setUser(userData);
       } catch (error) {
-        localStorage.removeItem('token');
+        // Only remove token on 401 Unauthorized, not on network errors
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('token');
+        } else {
+          // Network error - keep the token, user might be offline temporarily
+          console.warn('Auth check failed, keeping token:', error.message);
+        }
       }
     }
     setLoading(false);

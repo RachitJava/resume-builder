@@ -28,21 +28,20 @@ public class ResumeParserService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final ApiKeyService apiKeyService;
     
     @Value("${ai.api.url:https://api.groq.com/openai/v1/chat/completions}")
     private String aiApiUrl;
     
-    @Value("${ai.api.key:}")
-    private String aiApiKey;
-    
-    @Value("${ai.api.model:llama-3.1-70b-versatile}")
+    @Value("${ai.api.model:llama-3.3-70b-versatile}")
     private String aiModel;
 
-    public ResumeParserService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
+    public ResumeParserService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, ApiKeyService apiKeyService) {
         this.webClient = webClientBuilder
             .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
             .build();
         this.objectMapper = objectMapper;
+        this.apiKeyService = apiKeyService;
     }
 
     public ResumeDTO parseResume(MultipartFile file) {
@@ -67,15 +66,13 @@ public class ResumeParserService {
         }
 
         // Try AI parsing first
-        if (aiApiKey != null && !aiApiKey.isEmpty()) {
-            try {
-                log.info("Using AI to parse resume with model: {}", aiModel);
-                return parseWithAI(content);
-            } catch (Exception e) {
-                log.error("AI parsing failed: {}", e.getMessage());
-            }
-        } else {
-            log.warn("No AI API key configured, using regex fallback");
+        try {
+            String apiKey = apiKeyService.getActiveApiKey("groq");
+            log.info("Using AI to parse resume with model: {}", aiModel);
+            return parseWithAI(content, apiKey);
+        } catch (Exception e) {
+            log.error("AI parsing failed: {}", e.getMessage());
+            apiKeyService.reportError("groq", e.getMessage());
         }
         
         return parseWithRegex(content);
@@ -102,7 +99,7 @@ public class ResumeParserService {
         return text.toString();
     }
 
-    private ResumeDTO parseWithAI(String resumeText) {
+    private ResumeDTO parseWithAI(String resumeText, String apiKey) {
         // Truncate if too long (Groq has token limits)
         String truncatedText = resumeText.length() > 6000 ? resumeText.substring(0, 6000) : resumeText;
         
@@ -178,7 +175,7 @@ public class ResumeParserService {
 
             String response = webClient.post()
                 .uri(aiApiUrl)
-                .header("Authorization", "Bearer " + aiApiKey)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .bodyValue(requestJson)
                 .retrieve()
@@ -186,11 +183,15 @@ public class ResumeParserService {
                     return clientResponse.bodyToMono(String.class)
                         .flatMap(body -> {
                             log.error("API Error Response: {}", body);
+                            apiKeyService.reportError("groq", body);
                             return Mono.error(new RuntimeException("API Error: " + body));
                         });
                 })
                 .bodyToMono(String.class)
                 .block();
+            
+            // Report success
+            apiKeyService.reportSuccess("groq", 1000); // Approximate tokens
 
             log.info("AI Response received, length: {}", response != null ? response.length() : 0);
             

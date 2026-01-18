@@ -18,6 +18,9 @@ public class Resume {
     private String id;
 
     @Column(nullable = false)
+    private String userId; // User's email who owns this resume
+
+    @Column(nullable = false)
     private String fullName;
 
     private String email;

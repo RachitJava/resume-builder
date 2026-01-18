@@ -124,18 +124,17 @@ export default function ResumeForm({ resume, onChange }) {
   ];
 
   return (
-    <div className="bg-ink-900/50 border border-ink-800 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
       {/* Section Navigation */}
-      <div className="flex overflow-x-auto border-b border-ink-800 bg-ink-900/50">
+      <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#27272A]">
         {sections.map((section) => (
           <button
             key={section.id}
             onClick={() => setActiveSection(section.id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-smooth border-b-2 ${
-              activeSection === section.id
-                ? 'border-accent text-accent bg-accent/5'
-                : 'border-transparent text-ink-400 hover:text-ink-200 hover:bg-ink-800/30'
-            }`}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-smooth border-b-2 ${activeSection === section.id
+                ? 'border-gray-900 dark:border-gray-50 text-gray-900 dark:text-gray-50 bg-white dark:bg-[#18181B]'
+                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-[#18181B]/50'
+              }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={section.icon} />
@@ -146,12 +145,12 @@ export default function ResumeForm({ resume, onChange }) {
       </div>
 
       {/* Form Content */}
-      <div className="p-5 space-y-5 max-h-[calc(100vh-300px)] overflow-y-auto">
+      <div className="p-6 space-y-5 max-h-[calc(100vh-300px)] overflow-y-auto">
         {/* Personal Section */}
         {activeSection === 'personal' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Full Name *</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Full Name *</label>
               <input
                 type="text"
                 value={resume.fullName}
@@ -160,10 +159,10 @@ export default function ResumeForm({ resume, onChange }) {
                 className="w-full"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink-300 mb-1.5">Email</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Email</label>
                 <input
                   type="email"
                   value={resume.email || ''}
@@ -173,7 +172,7 @@ export default function ResumeForm({ resume, onChange }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-300 mb-1.5">Phone</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Phone</label>
                 <input
                   type="tel"
                   value={resume.phone || ''}
@@ -183,9 +182,9 @@ export default function ResumeForm({ resume, onChange }) {
                 />
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Location</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Location</label>
               <input
                 type="text"
                 value={resume.location || ''}
@@ -194,10 +193,10 @@ export default function ResumeForm({ resume, onChange }) {
                 className="w-full"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink-300 mb-1.5">LinkedIn</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">LinkedIn</label>
                 <input
                   type="url"
                   value={resume.linkedIn || ''}
@@ -207,7 +206,7 @@ export default function ResumeForm({ resume, onChange }) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink-300 mb-1.5">GitHub</label>
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">GitHub</label>
                 <input
                   type="url"
                   value={resume.github || ''}
@@ -217,9 +216,9 @@ export default function ResumeForm({ resume, onChange }) {
                 />
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Website</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Website</label>
               <input
                 type="url"
                 value={resume.website || ''}
@@ -228,9 +227,9 @@ export default function ResumeForm({ resume, onChange }) {
                 className="w-full"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Professional Summary</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Professional Summary</label>
               <textarea
                 value={resume.summary || ''}
                 onChange={(e) => updateField('summary', e.target.value)}
@@ -246,22 +245,22 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'experience' && (
           <div className="space-y-5">
             {(resume.experience || []).map((exp, index) => (
-              <div key={index} className="p-4 bg-ink-800/30 rounded-lg border border-ink-700/50 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink-300">Experience {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-300">Experience {index + 1}</span>
                   <button
                     onClick={() => removeExperience(index)}
-                    className="p-1.5 text-ink-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
+                    className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Company</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Company</label>
                     <input
                       type="text"
                       value={exp.company}
@@ -271,7 +270,7 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Position</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Position</label>
                     <input
                       type="text"
                       value={exp.position}
@@ -281,10 +280,10 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Start Date</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                     <input
                       type="text"
                       value={exp.startDate}
@@ -294,7 +293,7 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">End Date</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">End Date</label>
                     <input
                       type="text"
                       value={exp.endDate || ''}
@@ -306,7 +305,7 @@ export default function ResumeForm({ resume, onChange }) {
                 </div>
 
                 {/* Service-Based Company Toggle */}
-                <div className="flex items-center gap-3 p-3 bg-ink-900/50 rounded-lg border border-ink-700/30">
+                <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700/30">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -314,11 +313,11 @@ export default function ResumeForm({ resume, onChange }) {
                       onChange={(e) => updateExperience(index, 'serviceBased', e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-ink-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
+                    <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black dark:bg-white"></div>
                   </label>
                   <div>
-                    <span className="text-sm font-medium text-ink-200">Service-Based Company</span>
-                    <p className="text-xs text-ink-500">Enable for consulting firms (TCS, Cognizant, Accenture, etc.)</p>
+                    <span className="text-sm font-medium text-gray-200">Service-Based Company</span>
+                    <p className="text-xs text-gray-500">Enable for consulting firms (TCS, Cognizant, Accenture, etc.)</p>
                   </div>
                 </div>
 
@@ -326,7 +325,7 @@ export default function ResumeForm({ resume, onChange }) {
                 {!exp.serviceBased && (
                   <>
                     <div>
-                      <label className="block text-xs text-ink-400 mb-1">Description</label>
+                      <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
                       <textarea
                         value={exp.description || ''}
                         onChange={(e) => updateExperience(index, 'description', e.target.value)}
@@ -335,9 +334,9 @@ export default function ResumeForm({ resume, onChange }) {
                         className="w-full text-sm resize-none"
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-xs text-ink-400 mb-1">Key Highlights (one per line)</label>
+                      <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Key Highlights (one per line)</label>
                       <textarea
                         value={(exp.highlights || []).join('\n')}
                         onChange={(e) => updateExperience(index, 'highlights', e.target.value.split('\n').filter(h => h.trim()))}
@@ -353,7 +352,7 @@ export default function ResumeForm({ resume, onChange }) {
                 {exp.serviceBased && (
                   <div className="space-y-4 mt-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium text-accent flex items-center gap-2">
+                      <h4 className="text-sm font-medium text-black dark:text-white flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
@@ -362,12 +361,12 @@ export default function ResumeForm({ resume, onChange }) {
                     </div>
 
                     {(exp.clientProjects || []).map((client, clientIndex) => (
-                      <div key={clientIndex} className="p-3 bg-ink-900/50 rounded-lg border border-accent/20 space-y-3">
+                      <div key={clientIndex} className="p-3 bg-gray-900/50 rounded-lg border border-black dark:border-white/20 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-accent">Client {clientIndex + 1}</span>
+                          <span className="text-xs font-medium text-black dark:text-white">Client {clientIndex + 1}</span>
                           <button
                             onClick={() => removeClientProject(index, clientIndex)}
-                            className="p-1 text-ink-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
+                            className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -377,7 +376,7 @@ export default function ResumeForm({ resume, onChange }) {
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs text-ink-500 mb-1">Client Name</label>
+                            <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Client Name</label>
                             <input
                               type="text"
                               value={client.clientName || ''}
@@ -387,7 +386,7 @@ export default function ResumeForm({ resume, onChange }) {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-ink-500 mb-1">Project Name</label>
+                            <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Project Name</label>
                             <input
                               type="text"
                               value={client.projectName || ''}
@@ -399,7 +398,7 @@ export default function ResumeForm({ resume, onChange }) {
                         </div>
 
                         <div>
-                          <label className="block text-xs text-ink-500 mb-1">Role at Client</label>
+                          <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Role at Client</label>
                           <input
                             type="text"
                             value={client.role || ''}
@@ -411,7 +410,7 @@ export default function ResumeForm({ resume, onChange }) {
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-xs text-ink-500 mb-1">Start Date</label>
+                            <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                             <input
                               type="text"
                               value={client.startDate || ''}
@@ -421,7 +420,7 @@ export default function ResumeForm({ resume, onChange }) {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-ink-500 mb-1">End Date</label>
+                            <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">End Date</label>
                             <input
                               type="text"
                               value={client.endDate || ''}
@@ -433,7 +432,7 @@ export default function ResumeForm({ resume, onChange }) {
                         </div>
 
                         <div>
-                          <label className="block text-xs text-ink-500 mb-1">Key Highlights (one per line)</label>
+                          <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Key Highlights (one per line)</label>
                           <textarea
                             value={(client.highlights || []).join('\n')}
                             onChange={(e) => updateClientProject(index, clientIndex, 'highlights', e.target.value.split('\n').filter(h => h.trim()))}
@@ -447,7 +446,7 @@ export default function ResumeForm({ resume, onChange }) {
 
                     <button
                       onClick={() => addClientProject(index)}
-                      className="w-full py-2 px-3 text-xs font-medium text-accent border border-accent/30 rounded-lg hover:bg-accent/10 transition-smooth flex items-center justify-center gap-2"
+                      className="w-full py-2 px-3 text-xs font-medium text-black dark:text-white border border-black dark:border-white/30 rounded-lg hover:bg-black dark:bg-white/10 transition-smooth flex items-center justify-center gap-2"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -458,7 +457,7 @@ export default function ResumeForm({ resume, onChange }) {
                 )}
               </div>
             ))}
-            
+
             <button onClick={addExperience} className="w-full btn btn-secondary text-sm">
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -474,21 +473,21 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'education' && (
           <div className="space-y-5">
             {(resume.education || []).map((edu, index) => (
-              <div key={index} className="p-4 bg-ink-800/30 rounded-lg border border-ink-700/50 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink-300">Education {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-300">Education {index + 1}</span>
                   <button
                     onClick={() => removeEducation(index)}
-                    className="p-1.5 text-ink-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
+                    className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs text-ink-400 mb-1">Institution</label>
+                  <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Institution</label>
                   <input
                     type="text"
                     value={edu.institution}
@@ -497,10 +496,10 @@ export default function ResumeForm({ resume, onChange }) {
                     className="w-full text-sm"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Degree</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Degree</label>
                     <input
                       type="text"
                       value={edu.degree}
@@ -510,7 +509,7 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Field of Study</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Field of Study</label>
                     <input
                       type="text"
                       value={edu.field}
@@ -520,10 +519,10 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">Start Date</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Start Date</label>
                     <input
                       type="text"
                       value={edu.startDate}
@@ -533,7 +532,7 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">End Date</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">End Date</label>
                     <input
                       type="text"
                       value={edu.endDate || ''}
@@ -543,7 +542,7 @@ export default function ResumeForm({ resume, onChange }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-ink-400 mb-1">GPA</label>
+                    <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">GPA</label>
                     <input
                       type="text"
                       value={edu.gpa || ''}
@@ -555,7 +554,7 @@ export default function ResumeForm({ resume, onChange }) {
                 </div>
               </div>
             ))}
-            
+
             <button onClick={addEducation} className="w-full btn btn-secondary text-sm">
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -571,7 +570,7 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'skills' && (
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Skills (one per line)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Skills (one per line)</label>
               <textarea
                 value={(resume.skills || []).join('\n')}
                 onChange={(e) => updateField('skills', e.target.value.split('\n').filter(s => s.trim()))}
@@ -580,9 +579,9 @@ export default function ResumeForm({ resume, onChange }) {
                 className="w-full resize-none"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-ink-300 mb-1.5">Certifications (one per line)</label>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Certifications (one per line)</label>
               <textarea
                 value={(resume.certifications || []).join('\n')}
                 onChange={(e) => updateField('certifications', e.target.value.split('\n').filter(c => c.trim()))}
@@ -598,21 +597,21 @@ export default function ResumeForm({ resume, onChange }) {
         {activeSection === 'projects' && (
           <div className="space-y-5">
             {(resume.projects || []).map((proj, index) => (
-              <div key={index} className="p-4 bg-ink-800/30 rounded-lg border border-ink-700/50 space-y-4">
+              <div key={index} className="p-4 bg-gray-50 dark:bg-[#27272A] rounded-lg border border-gray-200 dark:border-gray-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink-300">Project {index + 1}</span>
+                  <span className="text-sm font-medium text-gray-300">Project {index + 1}</span>
                   <button
                     onClick={() => removeProject(index)}
-                    className="p-1.5 text-ink-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
+                    className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded transition-smooth"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs text-ink-400 mb-1">Project Name</label>
+                  <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Project Name</label>
                   <input
                     type="text"
                     value={proj.name}
@@ -621,9 +620,9 @@ export default function ResumeForm({ resume, onChange }) {
                     className="w-full text-sm"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs text-ink-400 mb-1">Description</label>
+                  <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
                   <textarea
                     value={proj.description || ''}
                     onChange={(e) => updateProject(index, 'description', e.target.value)}
@@ -632,9 +631,9 @@ export default function ResumeForm({ resume, onChange }) {
                     className="w-full text-sm resize-none"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs text-ink-400 mb-1">Project URL</label>
+                  <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Project URL</label>
                   <input
                     type="url"
                     value={proj.url || ''}
@@ -643,9 +642,9 @@ export default function ResumeForm({ resume, onChange }) {
                     className="w-full text-sm"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-xs text-ink-400 mb-1">Technologies (comma separated)</label>
+                  <label className="block text-xs text-gray-700 dark:text-gray-300 mb-1.5">Technologies (comma separated)</label>
                   <input
                     type="text"
                     value={(proj.technologies || []).join(', ')}
@@ -656,7 +655,7 @@ export default function ResumeForm({ resume, onChange }) {
                 </div>
               </div>
             ))}
-            
+
             <button onClick={addProject} className="w-full btn btn-secondary text-sm">
               <span className="flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

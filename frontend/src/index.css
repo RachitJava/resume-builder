@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,15 +9,16 @@
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  background: linear-gradient(135deg, #18181b 0%, #27272a 50%, #18181b 100%);
-  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  @apply bg-white dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-50 min-h-screen;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - clean and minimal */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -23,46 +26,117 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #41414a;
-  border-radius: 3px;
+  background: #e5e5e5;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #5d5d6b;
+  background: #d4d4d4;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272a;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
 /* Smooth transitions */
 .transition-smooth {
-  @apply transition-all duration-200 ease-out;
+  @apply transition-all duration-150 ease-out;
 }
 
-/* Input styles */
-input, textarea, select {
-  @apply bg-ink-900 border border-ink-700 rounded-lg px-4 py-2.5 text-ink-100 
-         placeholder-ink-500 focus:outline-none focus:border-accent focus:ring-1 
-         focus:ring-accent/20 transition-smooth;
+/* Input styles - high contrast, clean */
+input,
+textarea,
+select {
+  @apply bg-white dark:bg-[#18181B] border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-gray-50 placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none focus:border-gray-900 dark:focus:border-gray-100 focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-gray-100/10 transition-smooth;
+  font-size: 15px;
 }
 
-input:hover, textarea:hover, select:hover {
-  @apply border-ink-600;
+input:hover,
+textarea:hover,
+select:hover {
+  @apply border-gray-400 dark:border-gray-600;
 }
 
-/* Button base */
+/* Button base - crisp and modern */
 .btn {
-  @apply px-5 py-2.5 rounded-lg font-medium transition-smooth 
-         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-ink-950;
+  @apply px-4 py-2.5 rounded-lg font-medium transition-smooth focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#0A0A0A];
+  font-size: 14px;
 }
 
 .btn-primary {
-  @apply bg-accent text-white hover:bg-accent-hover focus:ring-accent;
+  @apply bg-gray-900 dark:bg-gray-50 text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-200 focus:ring-gray-900 dark:focus:ring-gray-50 shadow-sm hover:shadow-md;
 }
 
 .btn-secondary {
-  @apply bg-ink-800 text-ink-200 border border-ink-700 hover:bg-ink-700 
-         hover:border-ink-600 focus:ring-ink-500;
+  @apply bg-white dark:bg-[#18181B] text-gray-900 dark:text-gray-50 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#27272A] hover:border-gray-400 dark:hover:border-gray-600 focus:ring-gray-500 shadow-sm;
 }
 
 .btn-ghost {
-  @apply text-ink-400 hover:text-ink-200 hover:bg-ink-800/50;
+  @apply text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-50 hover:bg-gray-100 dark:hover:bg-[#27272A];
 }
 
+/* Print & PDF Export Utilities */
+@layer utilities {
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .page-break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+}
+
+/* Ensure resume page is always white and printed correctly */
+.resume-page {
+  @apply bg-white;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Smart Page Breaks */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  break-after: avoid-page !important;
+  page-break-after: avoid !important;
+}
+
+section,
+.section {
+  break-inside: auto;
+  /* Allow breaking INSIDE a section, but... */
+}
+
+/* But keep headings with their first sibling */
+section>h2+*,
+.section>h2+*,
+h2+div,
+h3+div {
+  break-before: avoid !important;
+}
+
+/* Hide notifications in PDF/Print */
+@media print {
+
+  [class*="bg-amber"],
+  [class*="bg-blue"],
+  [class*="bg-red"],
+  [class*="bg-green"] {
+    display: none !important;
+  }
+}

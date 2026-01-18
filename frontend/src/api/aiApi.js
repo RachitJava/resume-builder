@@ -9,6 +9,14 @@ export const aiApi = {
       currentResume
     });
     return response.data;
+  },
+
+  optimizeResume: async (currentResume, options = {}) => {
+    const response = await axios.post(`${API_URL}/optimize`, {
+      currentResume,
+      options
+    });
+    return response.data;
   }
 };
 

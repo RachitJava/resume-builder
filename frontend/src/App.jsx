@@ -6,22 +6,23 @@ import Editor from './pages/Editor';
 import Login from './pages/Login';
 import Templates from './pages/Templates';
 import JobMatch from './pages/JobMatch';
+import AdminDashboard from './pages/AdminDashboard';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 }
 
@@ -30,8 +31,8 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-950">
-        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="w-8 h-8 border-2 border-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -63,6 +64,11 @@ function AppRoutes() {
         <Route path="editor/:id" element={
           <ProtectedRoute>
             <Editor />
+          </ProtectedRoute>
+        } />
+        <Route path="admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
           </ProtectedRoute>
         } />
       </Route>

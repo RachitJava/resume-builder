@@ -1,4 +1,10 @@
-export default function ResumePreview({ resume }) {
+import { useRef, useEffect, useState } from 'react';
+
+export default function ResumePreview({ resume, enableCompression = false }) {
+  const previewRef = useRef(null);
+  const [exceedsOnePage, setExceedsOnePage] = useState(false);
+  const [compressionLevel, setCompressionLevel] = useState(0);
+
   const templates = {
     modern: ModernTemplate,
     classic: ClassicTemplate,
@@ -13,12 +19,135 @@ export default function ResumePreview({ resume }) {
     developer: DeveloperTemplate,
   };
 
+  // Templates that are already optimized and should NEVER be compressed
+  const preOptimizedTemplates = ['atscompact', 'atsbold', 'atsclean', 'ats'];
+
+  // Check if current template should allow compression
+  const isPreOptimized = preOptimizedTemplates.includes(resume.template);
+  const shouldCompress = enableCompression && !isPreOptimized;
+
   const Template = templates[resume.template] || ModernTemplate;
 
+  // Auto-adjust content to fit one page (only if compression is enabled AND template allows it)
+  useEffect(() => {
+    if (!shouldCompress) {
+      // No compression - just check if it exceeds one page
+      if (previewRef.current) {
+        const onePageHeight = 1123; // A4 height in pixels at 96dpi
+        const height = previewRef.current.scrollHeight;
+        setExceedsOnePage(height > onePageHeight);
+        setCompressionLevel(0);
+      }
+      return;
+    }
+
+    // Compression enabled and template allows it - try to fit on one page
+    if (previewRef.current) {
+      const onePageHeight = 1123; // A4 height in pixels at 96dpi
+      let currentLevel = 0;
+
+      // Try progressively more aggressive compression levels
+      const tryCompressionLevel = (level) => {
+        setCompressionLevel(level);
+
+        // Wait for DOM update
+        setTimeout(() => {
+          if (previewRef.current) {
+            const height = previewRef.current.scrollHeight;
+
+            if (height > onePageHeight && level < 4) {
+              // Try next compression level
+              tryCompressionLevel(level + 1);
+            } else {
+              // Either fits now or we've exhausted all options
+              setExceedsOnePage(height > onePageHeight);
+            }
+          }
+        }, 50);
+      };
+
+      tryCompressionLevel(0);
+    }
+  }, [resume, shouldCompress]);
+
+  // Compression styles based on level
+  const getCompressionStyles = () => {
+    const levels = [
+      // Level 0: Normal
+      {
+        fontSize: '10pt',
+        lineHeight: '1.4',
+        padding: '32px',
+        sectionSpacing: '20px',
+        itemSpacing: '12px'
+      },
+      // Level 1: Reduce spacing
+      {
+        fontSize: '10pt',
+        lineHeight: '1.35',
+        padding: '28px',
+        sectionSpacing: '16px',
+        itemSpacing: '10px'
+      },
+      // Level 2: Reduce font and spacing more
+      {
+        fontSize: '9.5pt',
+        lineHeight: '1.3',
+        padding: '24px',
+        sectionSpacing: '14px',
+        itemSpacing: '8px'
+      },
+      // Level 3: Aggressive compression
+      {
+        fontSize: '9pt',
+        lineHeight: '1.25',
+        padding: '20px',
+        sectionSpacing: '12px',
+        itemSpacing: '6px'
+      },
+      // Level 4: Maximum compression
+      {
+        fontSize: '8.5pt',
+        lineHeight: '1.2',
+        padding: '16px',
+        sectionSpacing: '10px',
+        itemSpacing: '5px'
+      }
+    ];
+
+    return levels[compressionLevel] || levels[0];
+  };
+
+  const styles = getCompressionStyles();
+
   return (
-    <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-      <div className="p-6 md:p-8 min-h-[600px]">
-        <Template resume={resume} />
+    <div className="space-y-4">
+      {/* Notifications removed as per user request */}
+
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden overflow-x-auto">
+        {/* A4 page container with dynamic compression */}
+        <div
+          id="resume-preview-content"
+          ref={previewRef}
+          className="resume-page resume-auto-fit"
+          style={{
+            width: '100%',
+            maxWidth: '794px',
+            minHeight: '1123px',
+            margin: '0 auto',
+            // Apply default padding if not compressing, otherwise use compression styles
+            padding: shouldCompress && compressionLevel > 0 ? styles.padding : '32px',
+            // Only apply other compression styles if actually compressing
+            ...(shouldCompress && compressionLevel > 0 ? {
+              fontSize: styles.fontSize,
+              lineHeight: styles.lineHeight,
+              '--section-spacing': styles.sectionSpacing,
+              '--item-spacing': styles.itemSpacing
+            } : {})
+          }}
+        >
+          <Template resume={resume} />
+        </div>
       </div>
     </div>
   );
@@ -32,7 +161,7 @@ function ExperienceBlock({ exp, bulletStyle = '•', showBorder = false }) {
   const hasClients = exp.serviceBased && exp.clientProjects?.length > 0;
 
   return (
-    <div className={`mb-4 last:mb-0 ${showBorder ? 'border-l-2 border-gray-200 pl-3' : ''}`}>
+    <div className={`mb-4 last:mb-0 break-inside-avoid page-break-inside-avoid ${showBorder ? 'border-l-2 border-gray-200 pl-3' : ''}`}>
       <div className="flex justify-between items-start flex-wrap gap-1">
         <div>
           <div className="font-bold text-gray-900">{exp.position}</div>
@@ -42,7 +171,7 @@ function ExperienceBlock({ exp, bulletStyle = '•', showBorder = false }) {
           {exp.startDate} – {exp.endDate || 'Present'}
         </span>
       </div>
-      
+
       {hasClients ? (
         <div className="mt-2 space-y-3">
           {exp.clientProjects.map((client, ci) => (
@@ -95,7 +224,7 @@ function ModernTemplate({ resume }) {
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
       {/* Header - Contact at top, not in document header */}
       <header className="text-center mb-5 pb-4 border-b-2 border-blue-600">
-        <h1 className="text-2xl font-bold text-blue-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
         <div className="text-gray-600 text-sm space-x-2">
@@ -115,7 +244,7 @@ function ModernTemplate({ resume }) {
       {/* Professional Summary */}
       {resume.summary && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Professional Summary
           </h2>
           <p className="text-gray-700">{resume.summary}</p>
@@ -125,7 +254,7 @@ function ModernTemplate({ resume }) {
       {/* Skills - Keywords for ATS */}
       {resume.skills?.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Technical Skills
           </h2>
           <p className="text-gray-700">{resume.skills.join(' • ')}</p>
@@ -135,7 +264,7 @@ function ModernTemplate({ resume }) {
       {/* Work Experience */}
       {resume.experience?.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Work Experience
           </h2>
           {resume.experience.map((exp, i) => (
@@ -147,11 +276,11 @@ function ModernTemplate({ resume }) {
       {/* Education */}
       {resume.education?.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Education
           </h2>
           {resume.education.map((edu, i) => (
-            <div key={i} className="mb-3 last:mb-0">
+            <div key={i} className="mb-3 last:mb-0 break-inside-avoid page-break-inside-avoid">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="font-bold text-gray-900">
@@ -172,7 +301,7 @@ function ModernTemplate({ resume }) {
       {/* Projects */}
       {resume.projects?.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Projects
           </h2>
           {resume.projects.map((proj, i) => (
@@ -190,7 +319,7 @@ function ModernTemplate({ resume }) {
       {/* Certifications */}
       {resume.certifications?.length > 0 && (
         <section>
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide border-b border-blue-200 pb-1 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1 mb-2">
             Certifications
           </h2>
           <ul className="space-y-1">
@@ -428,7 +557,7 @@ function ExecutiveTemplate({ resume }) {
 function CreativeTemplate({ resume }) {
   return (
     <div className="font-sans text-sm text-gray-800 leading-relaxed">
-      <header className="bg-gradient-to-r from-purple-600 to-pink-500 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
+      <header className="bg-gradient-to-r from-purple-600 to-purple-500 text-white p-6 -m-6 mb-6 md:-m-8 md:mb-6 md:p-8">
         <h1 className="text-3xl font-black mb-2">
           {resume.fullName || 'Your Name'}
         </h1>
@@ -447,7 +576,7 @@ function CreativeTemplate({ resume }) {
         <section className="mb-6">
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-sm font-medium">
+              <span key={i} className="px-3 py-1 bg-gradient-to-r from-purple-100 to-purple-100 text-purple-700 rounded-full text-sm font-medium">
                 {skill}
               </span>
             ))}
@@ -458,11 +587,11 @@ function CreativeTemplate({ resume }) {
       {resume.experience?.length > 0 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-purple-600 mb-4 flex items-center gap-2">
-            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></span>
+            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500 rounded"></span>
             Experience
           </h2>
           {resume.experience.map((exp, i) => (
-            <div key={i} className="mb-4 pl-4 border-l-2 border-purple-200">
+            <div key={i} className="mb-4 pl-4 border-l-2 border-gray-200">
               <ExperienceBlock exp={exp} bulletStyle="•" />
             </div>
           ))}
@@ -472,11 +601,11 @@ function CreativeTemplate({ resume }) {
       {resume.education?.length > 0 && (
         <section>
           <h2 className="text-lg font-bold text-purple-600 mb-4 flex items-center gap-2">
-            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-pink-500 rounded"></span>
+            <span className="w-8 h-1 bg-gradient-to-r from-purple-600 to-purple-500 rounded"></span>
             Education
           </h2>
           {resume.education.map((edu, i) => (
-            <div key={i} className="mb-2 pl-4 border-l-2 border-purple-200">
+            <div key={i} className="mb-2 pl-4 border-l-2 border-gray-200">
               <div className="font-bold">{edu.degree} in {edu.field}</div>
               <div className="text-gray-500 text-sm">{edu.institution} • {edu.endDate}</div>
             </div>
@@ -1012,7 +1141,7 @@ function TwoColumnTemplate({ resume }) {
                 <div className="font-bold">{proj.name}</div>
                 {proj.description && <p className="text-gray-600 text-sm">{proj.description}</p>}
                 {proj.technologies?.length > 0 && (
-                  <p className="text-blue-600 text-xs">{proj.technologies.join(', ')}</p>
+                  <p className="text-gray-600 text-xs">{proj.technologies.join(', ')}</p>
                 )}
               </div>
             ))}
@@ -1033,16 +1162,16 @@ function DeveloperTemplate({ resume }) {
       <div className="bg-gray-900 text-green-400 p-4 rounded-lg mb-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="w-3 h-3 rounded-full bg-red-500"></span>
-          <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+          <span className="w-3 h-3 rounded-full bg-gray-500"></span>
           <span className="w-3 h-3 rounded-full bg-green-500"></span>
           <span className="text-gray-500 text-xs ml-2">~/resume</span>
         </div>
         <div className="text-xs">
-          <p><span className="text-blue-400">const</span> developer = {'{'}</p>
-          <p className="ml-4"><span className="text-purple-400">name</span>: <span className="text-yellow-300">"{resume.fullName || 'Your Name'}"</span>,</p>
-          {resume.email && <p className="ml-4"><span className="text-purple-400">email</span>: <span className="text-yellow-300">"{resume.email}"</span>,</p>}
-          {resume.location && <p className="ml-4"><span className="text-purple-400">location</span>: <span className="text-yellow-300">"{resume.location}"</span>,</p>}
-          {resume.github && <p className="ml-4"><span className="text-purple-400">github</span>: <span className="text-yellow-300">"{resume.github}"</span></p>}
+          <p><span className="text-gray-400">const</span> developer = {'{'}</p>
+          <p className="ml-4"><span className="text-gray-400">name</span>: <span className="text-gray-300">"{resume.fullName || 'Your Name'}"</span>,</p>
+          {resume.email && <p className="ml-4"><span className="text-gray-400">email</span>: <span className="text-gray-300">"{resume.email}"</span>,</p>}
+          {resume.location && <p className="ml-4"><span className="text-gray-400">location</span>: <span className="text-gray-300">"{resume.location}"</span>,</p>}
+          {resume.github && <p className="ml-4"><span className="text-gray-400">github</span>: <span className="text-gray-300">"{resume.github}"</span></p>}
           <p>{'}'}</p>
         </div>
       </div>
@@ -1076,7 +1205,7 @@ function DeveloperTemplate({ resume }) {
                 <span className="text-green-600 font-mono">▶</span>
                 <span className="font-bold">{exp.position}</span>
               </div>
-              <p className="text-blue-600 text-xs ml-5">@{exp.company}</p>
+              <p className="text-gray-600 text-xs ml-5">@{exp.company}</p>
               <p className="text-gray-400 text-xs ml-5 mb-1">{exp.startDate} → {exp.endDate || 'present'}</p>
               {exp.serviceBased && exp.clientProjects?.length > 0 ? (
                 <div className="ml-5 mt-2 space-y-2">
@@ -1085,7 +1214,7 @@ function DeveloperTemplate({ resume }) {
                       <span className="text-green-500 font-mono text-xs">└──</span>
                       <span className="font-medium text-xs ml-1">{client.clientName}</span>
                       <span className="text-gray-400 text-xs"> ({client.startDate} → {client.endDate || 'present'})</span>
-                      {client.role && <p className="text-blue-500 text-xs ml-4">{client.role}</p>}
+                      {client.role && <p className="text-gray-500 text-xs ml-4">{client.role}</p>}
                       {client.highlights?.map((h, j) => (
                         <p key={j} className="text-gray-600 text-xs ml-4">- {h}</p>
                       ))}
@@ -1108,14 +1237,14 @@ function DeveloperTemplate({ resume }) {
           {resume.projects.map((proj, i) => (
             <div key={i} className="mb-3 last:mb-0 font-sans">
               <div className="flex items-center gap-2">
-                <span className="text-yellow-500 font-mono">★</span>
+                <span className="text-gray-500 font-mono">★</span>
                 <span className="font-bold">{proj.name}</span>
               </div>
               {proj.description && <p className="text-gray-600 text-xs ml-5">{proj.description}</p>}
               {proj.technologies?.length > 0 && (
                 <div className="ml-5 mt-1 flex flex-wrap gap-1">
                   {proj.technologies.map((tech, ti) => (
-                    <span key={ti} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                    <span key={ti} className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
                       {tech}
                     </span>
                   ))}

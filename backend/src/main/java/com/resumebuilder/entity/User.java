@@ -25,9 +25,11 @@ public class User {
     private LocalDateTime lastLogin;
     private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean isAdmin = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 }
-

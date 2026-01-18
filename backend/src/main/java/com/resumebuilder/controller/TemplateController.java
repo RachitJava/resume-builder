@@ -1,6 +1,8 @@
 package com.resumebuilder.controller;
 
 import com.resumebuilder.dto.ResumeDTO;
+import com.resumebuilder.entity.Template;
+import com.resumebuilder.repository.TemplateRepository;
 import com.resumebuilder.service.SampleDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,13 +14,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/templates")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TemplateController {
 
     private final SampleDataService sampleDataService;
+    private final TemplateRepository templateRepository;
 
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllTemplates() {
-        return ResponseEntity.ok(sampleDataService.getTemplates());
+    public ResponseEntity<List<Template>> getAllTemplates() {
+        return ResponseEntity.ok(templateRepository.findAll());
     }
 
     @GetMapping("/countries")
@@ -31,4 +35,3 @@ public class TemplateController {
         return ResponseEntity.ok(sampleDataService.getSampleForTemplate(templateId));
     }
 }
-

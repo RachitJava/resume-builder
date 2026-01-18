@@ -25,11 +25,11 @@ public class AuthService {
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 10;
-    private static final int SESSION_EXPIRY_DAYS = 7;
+    private static final int SESSION_EXPIRY_DAYS = 15; // 15 days session
 
     public AuthDTO.AuthResponse sendOtp(String email) {
         String normalizedEmail = email.toLowerCase().trim();
-        
+
         // Find or create user
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> {
@@ -46,7 +46,7 @@ public class AuthService {
 
         // Send email
         emailService.sendOtpEmail(normalizedEmail, otp);
-        
+
         log.info("OTP sent to: {}", normalizedEmail);
         return new AuthDTO.AuthResponse("OTP sent to " + normalizedEmail);
     }
@@ -54,7 +54,7 @@ public class AuthService {
     @Transactional
     public AuthDTO.AuthResponse verifyOtp(String email, String otp) {
         String normalizedEmail = email.toLowerCase().trim();
-        
+
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("User not found. Please request OTP first."));
 
@@ -98,6 +98,14 @@ public class AuthService {
         return userRepository.findById(session.getUserId()).orElse(null);
     }
 
+    public boolean isAdmin(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+        User user = validateToken(authHeader.substring(7));
+        return user != null && user.isAdmin();
+    }
+
     @Transactional
     public void logout(String token) {
         sessionRepository.findByToken(token).ifPresent(session -> {
@@ -114,4 +122,3 @@ public class AuthService {
         return otp.toString();
     }
 }
-

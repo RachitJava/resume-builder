@@ -23,7 +23,8 @@ COPY backend/pom.xml .
 COPY backend/mvnw* ./
 RUN mvn dependency:go-offline -B
 
-COPY backend/ ./backend
+# Copy source code (not into subdirectory)
+COPY backend/src ./src
 RUN mvn clean package -DskipTests
 
 # Stage 3: Runtime
@@ -46,10 +47,14 @@ RUN mkdir -p /app/data
 # Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8080/api/resumes || exit 1
+# Health check using dedicated health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD curl -f http://localhost:8080/api/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Set environment variables
+ENV PORT=8080
+ENV JAVA_OPTS="-Xms128m -Xmx384m -XX:+UseSerialGC -XX:MaxRAM=512m"
+
+# Run the application with explicit binding
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -Dspring.main.lazy-initialization=true -jar app.jar"]
 

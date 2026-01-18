@@ -23,6 +23,7 @@ export default function Templates() {
   const [countries, setCountries] = useState({});
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [previewData, setPreviewData] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,34 +46,34 @@ export default function Templates() {
   };
 
   const handleSelectTemplate = (template) => {
-    navigate('/editor', { 
-      state: { 
+    navigate('/editor', {
+      state: {
         templateId: template.id,
         baseStyle: template.baseStyle,
-        sample: template.sample 
-      } 
+        sample: template.sample
+      }
     });
   };
 
   const handleUseSample = async (template) => {
-    navigate('/editor', { 
-      state: { 
+    navigate('/editor', {
+      state: {
         templateId: template.id,
         baseStyle: template.baseStyle,
         sample: template.sample,
-        useSample: true 
-      } 
+        useSample: true
+      }
     });
   };
 
-  const filteredTemplates = selectedCountry === 'all' 
-    ? templates 
+  const filteredTemplates = selectedCountry === 'all'
+    ? templates
     : templates.filter(t => t.country === selectedCountry);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-black dark:border-white border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -81,10 +82,10 @@ export default function Templates() {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="font-display text-4xl font-bold text-ink-100">
-          Choose Your <span className="text-accent">Template</span>
+        <h1 className="font-display text-4xl font-bold text-gray-900 dark:text-gray-50">
+          Choose Your <span className="text-black dark:text-white">Template</span>
         </h1>
-        <p className="text-ink-400 text-lg max-w-2xl mx-auto">
+        <p className="text-gray-700 dark:text-gray-300 dark:text-gray-400 text-lg max-w-2xl mx-auto">
           Select a template optimized for your target country. Each template follows local hiring standards and best practices.
         </p>
       </div>
@@ -93,11 +94,10 @@ export default function Templates() {
       <div className="flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedCountry('all')}
-          className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${
-            selectedCountry === 'all'
-              ? 'bg-accent text-white'
-              : 'bg-ink-800/50 text-ink-300 hover:bg-ink-800 hover:text-ink-100'
-          }`}
+          className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${selectedCountry === 'all'
+            ? 'bg-black dark:bg-white text-white dark:text-black'
+            : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-50'
+            }`}
         >
           🌍 All Templates
         </button>
@@ -105,11 +105,10 @@ export default function Templates() {
           <button
             key={code}
             onClick={() => setSelectedCountry(code)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${
-              selectedCountry === code
-                ? 'bg-accent text-white'
-                : 'bg-ink-800/50 text-ink-300 hover:bg-ink-800 hover:text-ink-100'
-            }`}
+            className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-smooth ${selectedCountry === code
+              ? 'bg-black dark:bg-white text-white dark:text-black'
+              : 'bg-gray-50 dark:bg-[#27272A] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-[#27272A] hover:text-gray-900 dark:text-gray-50'
+              }`}
           >
             {countryFlags[code]} {name}
           </button>
@@ -121,46 +120,43 @@ export default function Templates() {
         {filteredTemplates.map((template) => (
           <div
             key={template.id}
-            className="group bg-ink-900/50 border border-ink-800 rounded-2xl overflow-hidden hover:border-ink-700 transition-smooth"
+            onDoubleClick={() => setPreviewData(template)}
+            className="group bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:border-gray-300 dark:border-gray-700 transition-smooth cursor-pointer"
           >
             {/* Preview Header */}
-            <div className={`h-32 bg-gradient-to-br ${countryColors[template.country]} relative overflow-hidden`}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-20 h-28 bg-white rounded shadow-lg transform group-hover:scale-105 transition-transform">
-                  <div className="p-2 space-y-1">
-                    <div className="h-2 w-10 bg-ink-200 rounded"></div>
-                    <div className="h-1 w-14 bg-ink-100 rounded"></div>
-                    <div className="h-1 w-12 bg-ink-100 rounded"></div>
-                    <div className="mt-2 h-1 w-8 bg-accent/50 rounded"></div>
-                    <div className="space-y-0.5">
-                      <div className="h-0.5 w-full bg-ink-100 rounded"></div>
-                      <div className="h-0.5 w-full bg-ink-100 rounded"></div>
-                      <div className="h-0.5 w-10 bg-ink-100 rounded"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute top-3 right-3">
-                <span className="text-2xl">{countryFlags[template.country]}</span>
+            <div className="aspect-[1/1.414] w-full bg-gray-100 dark:bg-[#27272A] relative overflow-hidden" onClick={() => setPreviewData(template)}>
+              <img
+                src={`/api/public/templates/${template.baseStyle || 'modern'}/preview?v=highres`}
+                alt={`${template.name} Preview`}
+                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.classList.add('flex', 'items-center', 'justify-center', 'bg-gray-100', 'dark:bg-gray-800');
+                  e.target.parentElement.innerHTML = '<span class="text-xs text-gray-400">Preview Unavailable</span>';
+                }}
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+              <div className="absolute top-3 right-3 bg-white/90 dark:bg-black/90 backdrop-blur-sm rounded-full w-8 h-8 flex items-center justify-center shadow-sm z-10">
+                <span className="text-lg">{countryFlags[template.country]}</span>
               </div>
             </div>
 
             {/* Content */}
             <div className="p-5 space-y-4">
               <div>
-                <h3 className="font-semibold text-ink-100 text-lg">{template.name}</h3>
-                <p className="text-ink-400 text-sm mt-1">{template.description}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-lg">{template.name}</h3>
+                <p className="text-gray-700 dark:text-gray-300 dark:text-gray-400 text-sm mt-1">{template.description}</p>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  template.baseStyle === 'modern' ? 'bg-blue-500/10 text-blue-400' :
+                <span className={`px-2 py-1 rounded text-xs font-medium ${template.baseStyle === 'modern' ? 'bg-blue-500/10 text-blue-400' :
                   template.baseStyle === 'classic' ? 'bg-amber-500/10 text-amber-400' :
-                  'bg-emerald-500/10 text-emerald-400'
-                }`}>
+                    'bg-emerald-500/10 text-emerald-400'
+                  }`}>
                   {template.baseStyle}
                 </span>
-                <span className="text-ink-500 text-xs">
+                <span className="text-gray-700 dark:text-gray-300 dark:text-gray-400 text-xs">
                   {countries[template.country]}
                 </span>
               </div>
@@ -190,7 +186,37 @@ export default function Templates() {
 
       {filteredTemplates.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-ink-400">No templates found for this selection.</p>
+          <p className="text-gray-700 dark:text-gray-300 dark:text-gray-400">No templates found for this selection.</p>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewData(null)}>
+          <div className="relative max-w-4xl max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-xl font-bold">{previewData.name} Preview</h3>
+              <button onClick={() => setPreviewData(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
+              <div className="max-w-3xl mx-auto shadow-2xl">
+                <img
+                  src={`/api/public/templates/${previewData.baseStyle || 'modern'}/preview?v=highres`}
+                  alt={previewData.name}
+                  className="w-full h-auto block rounded-sm bg-white"
+                  loading="eager"
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">
+              <button onClick={() => setPreviewData(null)} className="btn btn-secondary">Close</button>
+              <button onClick={() => handleSelectTemplate(previewData)} className="btn btn-primary">Use Template</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

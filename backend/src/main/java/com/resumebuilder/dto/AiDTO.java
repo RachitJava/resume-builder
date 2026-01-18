@@ -2,6 +2,7 @@ package com.resumebuilder.dto;
 
 import lombok.Data;
 import java.util.List;
+import java.util.Map;
 
 public class AiDTO {
 
@@ -18,6 +19,18 @@ public class AiDTO {
         private ResumeDTO suggestedUpdates;
         private List<String> suggestedSkills;
         private String suggestedSummary;
+    }
+
+    @Data
+    public static class OptimizeRequest {
+        private ResumeDTO currentResume;
+        private Map<String, Object> options;
+    }
+
+    @Data
+    public static class OptimizeResponse extends ResumeDTO {
+        private String message;
+        private List<String> changes;
     }
 
     @Data
@@ -52,5 +65,5 @@ public class AiDTO {
             private String content;
         }
     }
-}
 
+}
