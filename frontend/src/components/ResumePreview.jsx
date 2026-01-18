@@ -531,7 +531,7 @@ export function ExecutiveTemplate({ resume }) {
           </h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-slate-100 text-slate-700 text-sm rounded">
                 {skill}
               </span>
             ))}
@@ -610,7 +610,7 @@ export function CreativeTemplate({ resume }) {
         <section className="mb-6">
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="px-3 py-1 bg-gradient-to-r from-purple-100 to-purple-100 text-purple-700 rounded-full text-sm font-medium">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-3 py-1.5 bg-gradient-to-r from-purple-100 to-purple-100 text-purple-700 rounded-full text-sm font-medium">
                 {skill}
               </span>
             ))}
@@ -1241,7 +1241,7 @@ export function DeveloperTemplate({ resume }) {
           <h2 className="text-xs font-bold text-gray-500 uppercase mb-2">// tech_stack</h2>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((skill, i) => (
-              <span key={i} className="px-2 py-1 bg-gray-900 text-green-400 rounded text-xs">
+              <span key={i} className="inline-flex items-center justify-center leading-none px-2 py-1.5 bg-gray-900 text-green-400 rounded text-xs">
                 {skill}
               </span>
             ))}
@@ -1297,7 +1297,7 @@ export function DeveloperTemplate({ resume }) {
               {proj.technologies?.length > 0 && (
                 <div className="ml-5 mt-1 flex flex-wrap gap-1">
                   {proj.technologies.map((tech, ti) => (
-                    <span key={ti} className="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                    <span key={ti} className="inline-flex items-center justify-center leading-none px-1.5 py-1 bg-gray-100 text-gray-700 rounded text-xs">
                       {tech}
                     </span>
                   ))}
