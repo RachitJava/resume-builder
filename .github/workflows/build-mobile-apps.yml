@@ -1,4 +1,4 @@
-name: Build Mobile Apps
+name: Build Android APK
 
 on:
   push:
@@ -43,12 +43,11 @@ jobs:
         working-directory: ./frontend/android
         run: ./gradlew assembleRelease
 
-      - name: Sign APK
+      - name: Rename APK
         working-directory: ./frontend/android/app/build/outputs/apk/release
         run: |
-          # For now, we'll use the unsigned APK
-          # In production, you should sign it with a keystore
-          mv app-release-unsigned.apk DecisiveML-Resume-Builder.apk || mv app-release.apk DecisiveML-Resume-Builder.apk
+          # Rename to DecisiveML
+          mv app-release-unsigned.apk DecisiveML-Resume-Builder.apk || mv app-release.apk DecisiveML-Resume-Builder.apk || true
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
@@ -57,82 +56,9 @@ jobs:
           path: frontend/android/app/build/outputs/apk/release/DecisiveML-Resume-Builder.apk
           retention-days: 30
 
-  build-ios:
-    name: Build iOS IPA
-    runs-on: macos-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-
-      - name: Sync Capacitor
-        working-directory: ./frontend
-        run: npx cap sync ios
-
-      - name: Install CocoaPods dependencies
-        working-directory: ./frontend/ios/App
-        run: pod install
-
-      - name: Build iOS Archive
-        working-directory: ./frontend/ios/App
-        run: |
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -archivePath $PWD/build/App.xcarchive \
-            archive
-
-      - name: Export IPA
-        working-directory: ./frontend/ios/App
-        run: |
-          # Create export options plist
-          cat > ExportOptions.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>teamID</key>
-              <string>YOUR_TEAM_ID</string>
-          </dict>
-          </plist>
-          EOF
-          
-          xcodebuild -exportArchive \
-            -archivePath $PWD/build/App.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath $PWD/build
-
-      - name: Rename IPA
-        working-directory: ./frontend/ios/App/build
-        run: mv App.ipa DecisiveML-Resume-Builder.ipa
-
-      - name: Upload iOS IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: DecisiveML-iOS-IPA
-          path: frontend/ios/App/build/DecisiveML-Resume-Builder.ipa
-          retention-days: 30
-
   create-release:
-    name: Create Release with Apps
-    needs: [build-android, build-ios]
+    name: Create Release with APK
+    needs: [build-android]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     
@@ -143,35 +69,33 @@ jobs:
           name: DecisiveML-Android-APK
           path: ./apps
 
-      - name: Download iOS IPA
-        uses: actions/download-artifact@v4
-        with:
-          name: DecisiveML-iOS-IPA
-          path: ./apps
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
+          name: DecisiveML v${{ github.run_number }}
           body: |
-            ## DecisiveML Resume Builder - Mobile Apps
+            ## DecisiveML Resume Builder - Android App
             
-            ### 📱 Downloads
-            - **Android**: DecisiveML-Resume-Builder.apk
-            - **iOS**: DecisiveML-Resume-Builder.ipa
+            ### 📱 Download
+            - **Android APK**: DecisiveML-Resume-Builder.apk
             
             ### ✨ Latest Changes
-            - Fixed responsive layout on mobile
-            - Improved login form UI
-            - Added Downloads feature with PDF viewer
-            - Fixed footer positioning
-            - Enhanced PDF generation with permissions
+            - Auto-refresh on app launch
+            - Optimized PDF generation (faster)
+            - Header shows on all pages
+            - Downloads page with Open & Share
+            - Fixed responsive layout
+            - Beautiful login form
+            
+            ### 📱 iOS Users
+            Install as PWA from Safari:
+            1. Visit: https://resume-builder-app-misty-waterfall-5852.fly.dev/
+            2. Tap Share → "Add to Home Screen"
             
             Built from commit: ${{ github.sha }}
           files: |
             ./apps/DecisiveML-Resume-Builder.apk
-            ./apps/DecisiveML-Resume-Builder.ipa
           draft: false
           prerelease: false
         env:
