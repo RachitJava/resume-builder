@@ -25,11 +25,32 @@ export default function Login() {
     setError('');
 
     try {
+      console.log('🔐 Attempting to send OTP to:', email);
       const response = await authApi.sendOtp(email);
+      console.log('✅ OTP sent successfully:', response);
       setMessage(response.message);
       setStep('otp');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
+      console.error('❌ OTP send failed:', err);
+
+      let errorMessage = 'Failed to send OTP';
+
+      if (err.message?.includes('Network Error') || err.message?.includes('timeout')) {
+        errorMessage = '🌐 Network Error: Cannot connect to server. Check your internet connection.';
+      } else if (err.response) {
+        // Server responded with error
+        errorMessage = `Server Error (${err.response.status}): ${err.response.data?.message || err.response.statusText}`;
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = '📡 No response from server. The backend might be down or unreachable.';
+      } else {
+        errorMessage = `Error: ${err.message}`;
+      }
+
+      setError(errorMessage);
+
+      // Also show alert for visibility
+      alert(`OTP Failed:\n${errorMessage}\n\nCheck console for details.`);
     } finally {
       setLoading(false);
     }
