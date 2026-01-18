@@ -56,7 +56,7 @@ export default function ResumePreview({ resume, enableCompression = true }) {
           if (previewRef.current) {
             const height = previewRef.current.scrollHeight;
 
-            if (height > onePageHeight && level < 4) {
+            if (height > onePageHeight && level < 6) {
               // Try next compression level
               tryCompressionLevel(level + 1);
             } else {
@@ -113,6 +113,22 @@ export default function ResumePreview({ resume, enableCompression = true }) {
         padding: '16px',
         sectionSpacing: '10px',
         itemSpacing: '5px'
+      },
+      // Level 5: Extreme compression
+      {
+        fontSize: '8pt',
+        lineHeight: '1.15',
+        padding: '14px',
+        sectionSpacing: '8px',
+        itemSpacing: '4px'
+      },
+      // Level 6: Ultimate compression
+      {
+        fontSize: '7.5pt',
+        lineHeight: '1.1',
+        padding: '12px',
+        sectionSpacing: '6px',
+        itemSpacing: '3px'
       }
     ];
 
