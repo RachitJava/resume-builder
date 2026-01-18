@@ -2,6 +2,13 @@
   "appId": "com.decisiveml.app",
   "appName": "DecisiveML",
   "webDir": "dist",
+  "server": {
+    "url": "https://resume-builder-app-misty-waterfall-5852.fly.dev/",
+    "cleartext": true,
+    "allowNavigation": [
+      "resume-builder-app-misty-waterfall-5852.fly.dev"
+    ]
+  },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
