@@ -35,7 +35,7 @@ export default defineConfig({
       }
     })
   ],
-  base: process.env.NODE_ENV === 'production' ? '/resume-builder/' : '/',
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

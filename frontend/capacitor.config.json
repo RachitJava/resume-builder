@@ -3,10 +3,10 @@
   "appName": "DecisiveML",
   "webDir": "dist",
   "server": {
-    "url": "https://rachitjava.github.io/resume-builder/",
+    "url": "https://resume-builder-app-misty-waterfall-5852.fly.dev/",
     "cleartext": true,
     "allowNavigation": [
-      "rachitjava.github.io"
+      "resume-builder-app-misty-waterfall-5852.fly.dev"
     ]
   },
   "plugins": {
