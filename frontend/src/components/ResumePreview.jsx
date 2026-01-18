@@ -7,30 +7,42 @@ export default function ResumePreview({ resume, enableCompression = false }) {
   const [scale, setScale] = useState(1);
 
   // Handle mobile scaling to fit screen
+  // Handle mobile scaling to fit screen using ResizeObserver for robustness
   useEffect(() => {
     const updateScale = () => {
       if (!previewRef.current) return;
       const parent = previewRef.current.parentElement;
-      if (parent) {
-        const availableWidth = parent.clientWidth; // Use clientWidth to exclude scrollbar
+
+      if (parent && parent.clientWidth > 0) {
+        const availableWidth = parent.clientWidth;
         // Minimal padding for aesthetics (32px total = 16px each side)
         const maxWidth = availableWidth - 24;
         const baseWidth = 794; // A4 standard width
 
-        if (maxWidth < baseWidth) {
-          setScale(maxWidth / baseWidth);
+        // Only scale if container is smaller than A4 (mobile/tablet)
+        // And ensure we don't scale to 0 (min 0.1)
+        if (maxWidth < baseWidth && maxWidth > 0) {
+          setScale(Math.max(0.1, maxWidth / baseWidth));
         } else {
           setScale(1);
         }
       }
     };
 
-    window.addEventListener('resize', updateScale);
-    // Initial calculation with small delay to ensure DOM is ready
-    setTimeout(updateScale, 0);
-    setTimeout(updateScale, 100);
+    // Use ResizeObserver to detect when tab switches or container resizes
+    const observer = new ResizeObserver(() => {
+      // Wrap in requestAnimationFrame to avoid "ResizeObserver loop limit exceeded"
+      requestAnimationFrame(updateScale);
+    });
 
-    return () => window.removeEventListener('resize', updateScale);
+    if (previewRef.current?.parentElement) {
+      observer.observe(previewRef.current.parentElement);
+    }
+
+    // Initial check
+    updateScale();
+
+    return () => observer.disconnect();
   }, []);
 
   const templates = {
