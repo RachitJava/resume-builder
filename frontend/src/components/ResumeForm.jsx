@@ -160,6 +160,17 @@ export default function ResumeForm({ resume, onChange }) {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Professional Title</label>
+              <input
+                type="text"
+                value={resume.jobTitle || ''}
+                onChange={(e) => updateField('jobTitle', e.target.value)}
+                placeholder="e.g. Software Engineer"
+                className="w-full"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-50 mb-2">Email</label>

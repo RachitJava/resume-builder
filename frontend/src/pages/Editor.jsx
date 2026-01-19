@@ -8,6 +8,7 @@ import AiAssistant from '../components/AiAssistant';
 
 const emptyResume = {
   fullName: '',
+  jobTitle: '',
   email: '',
   phone: '',
   location: '',

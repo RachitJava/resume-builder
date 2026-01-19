@@ -28,6 +28,7 @@ public class AiDTO {
     }
 
     @Data
+    @lombok.EqualsAndHashCode(callSuper = true)
     public static class OptimizeResponse extends ResumeDTO {
         private String message;
         private List<String> changes;

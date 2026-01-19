@@ -8,6 +8,7 @@ import com.resumebuilder.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -29,6 +30,7 @@ public class ResumeService {
                 .orElseThrow(() -> new RuntimeException("Resume not found or access denied: " + id));
 
         updateEntity(existing, dto);
+        existing.setUpdatedAt(LocalDateTime.now());
         existing = repository.save(existing);
         return toDTO(existing);
     }
@@ -65,7 +67,7 @@ public class ResumeService {
         return repository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Resume not found or access denied: " + id));
     }
-    
+
     // Internal method for PDF service
     public Resume getEntityById(String id) {
         return repository.findById(id)
@@ -80,6 +82,7 @@ public class ResumeService {
 
     private void updateEntity(Resume resume, ResumeDTO dto) {
         resume.setFullName(dto.getFullName());
+        resume.setJobTitle(dto.getJobTitle());
         resume.setEmail(dto.getEmail());
         resume.setPhone(dto.getPhone());
         resume.setLocation(dto.getLocation());
@@ -104,6 +107,7 @@ public class ResumeService {
         ResumeDTO dto = new ResumeDTO();
         dto.setId(resume.getId());
         dto.setFullName(resume.getFullName());
+        dto.setJobTitle(resume.getJobTitle());
         dto.setEmail(resume.getEmail());
         dto.setPhone(resume.getPhone());
         dto.setLocation(resume.getLocation());
@@ -112,6 +116,8 @@ public class ResumeService {
         dto.setWebsite(resume.getWebsite());
         dto.setSummary(resume.getSummary());
         dto.setTemplate(resume.getTemplate());
+        dto.setCreatedAt(resume.getCreatedAt());
+        dto.setUpdatedAt(resume.getUpdatedAt());
 
         try {
             dto.setExperience(parseList(resume.getExperience(), ResumeDTO.Experience.class));
@@ -127,15 +133,16 @@ public class ResumeService {
     }
 
     private <T> List<T> parseList(String json, Class<T> clazz) throws JsonProcessingException {
-        if (json == null || json.equals("null")) return List.of();
+        if (json == null || json.equals("null"))
+            return List.of();
         return objectMapper.readValue(json,
                 objectMapper.getTypeFactory().constructCollectionType(List.class, clazz));
     }
 
     private List<String> parseStringList(String json) throws JsonProcessingException {
-        if (json == null || json.equals("null")) return List.of();
+        if (json == null || json.equals("null"))
+            return List.of();
         return objectMapper.readValue(json,
                 objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
     }
 }
-

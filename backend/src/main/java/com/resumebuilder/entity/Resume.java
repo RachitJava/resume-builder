@@ -23,6 +23,8 @@ public class Resume {
     @Column(nullable = false)
     private String fullName;
 
+    private String jobTitle;
+
     private String email;
     private String phone;
     private String location;
@@ -64,4 +66,3 @@ public class Resume {
         updatedAt = LocalDateTime.now();
     }
 }
-

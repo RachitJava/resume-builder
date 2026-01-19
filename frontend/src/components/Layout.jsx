@@ -26,6 +26,16 @@ export default function Layout({ children }) {
   const NavLinks = () => (
     <>
       <Link
+        to="/welcome"
+        onClick={() => setIsMenuOpen(false)}
+        className={`text-sm font-medium transition-smooth ${location.pathname === '/welcome'
+          ? 'text-gray-900 dark:text-gray-50'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
+      >
+        Welcome
+      </Link>
+      <Link
         to="/templates"
         onClick={() => setIsMenuOpen(false)}
         className={`text-sm font-medium transition-smooth ${location.pathname === '/templates'

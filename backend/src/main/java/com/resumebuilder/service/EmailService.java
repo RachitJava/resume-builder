@@ -82,4 +82,43 @@ public class EmailService {
             log.warn("Use the OTP logged above for testing");
         }
     }
+
+    public void sendEmail(String to, String subject, String body) {
+        log.info("Sending email to {} with subject: {}", to, subject);
+
+        if (mailSender == null) {
+            log.warn("Mail sender not configured. Email content logged below:");
+            log.info("To: {}", to);
+            log.info("Subject: {}", subject);
+            log.info("Body: {}", body);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+
+            // Update password from database keys if available
+            try {
+                Optional<com.resumebuilder.entity.ApiKey> mailKeyOpt = apiKeyService.getActiveKeyEntity("mail");
+                if (mailKeyOpt.isPresent() && mailSender instanceof JavaMailSenderImpl) {
+                    ((JavaMailSenderImpl) mailSender).setPassword(mailKeyOpt.get().getApiKey());
+                    if (mailKeyOpt.get().getOwner() != null && !mailKeyOpt.get().getOwner().isEmpty()) {
+                        ((JavaMailSenderImpl) mailSender).setUsername(mailKeyOpt.get().getOwner());
+                        message.setFrom(mailKeyOpt.get().getOwner());
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("No Mail key in database, using system default: {}", e.getMessage());
+            }
+
+            mailSender.send(message);
+            log.info("Email sent successfully to: {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send email to {}: {}", to, e.getMessage());
+        }
+    }
 }

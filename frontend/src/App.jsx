@@ -9,6 +9,11 @@ import JobMatch from './pages/JobMatch';
 import AdminDashboard from './pages/AdminDashboard';
 import Downloads from './pages/Downloads';
 import PdfViewer from './pages/PdfViewer';
+import MockInterview from './pages/MockInterview';
+import QuestionBanks from './pages/QuestionBanks';
+import Learning from './pages/Learning';
+import Welcome from './pages/Welcome';
+
 
 
 function ProtectedRoute({ children }) {
@@ -49,6 +54,11 @@ function AppRoutes() {
             <Home />
           </ProtectedRoute>
         } />
+        <Route path="welcome" element={
+          <ProtectedRoute>
+            <Welcome />
+          </ProtectedRoute>
+        } />
         <Route path="templates" element={
           <ProtectedRoute>
             <Templates />
@@ -77,6 +87,21 @@ function AppRoutes() {
         <Route path="downloads" element={
           <ProtectedRoute>
             <Downloads />
+          </ProtectedRoute>
+        } />
+        <Route path="mock-interview" element={
+          <ProtectedRoute>
+            <MockInterview />
+          </ProtectedRoute>
+        } />
+        <Route path="question-banks" element={
+          <ProtectedRoute>
+            <QuestionBanks />
+          </ProtectedRoute>
+        } />
+        <Route path="learning" element={
+          <ProtectedRoute>
+            <Learning />
           </ProtectedRoute>
         } />
         <Route path="pdf-viewer" element={

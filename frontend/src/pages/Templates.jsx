@@ -46,25 +46,41 @@ export default function Templates() {
     }
   };
 
-  const handleSelectTemplate = (template) => {
-    navigate('/editor', {
-      state: {
-        templateId: template.id,
-        baseStyle: template.baseStyle,
-        sample: template.sample
-      }
-    });
+  const fetchAndNavigate = async (template, useSample = true) => {
+    setLoading(true);
+    try {
+      // Always fetch fresh sample data to ensure fields like jobTitle are present
+      const sampleData = await templateApi.getSample(template.id);
+
+      navigate('/editor', {
+        state: {
+          templateId: template.id,
+          baseStyle: template.baseStyle,
+          sample: sampleData,
+          useSample: useSample
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch template sample:', error);
+      // Fallback navigation without sample data if fetch fails
+      navigate('/editor', {
+        state: {
+          templateId: template.id,
+          baseStyle: template.baseStyle,
+          useSample: false
+        }
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUseSample = async (template) => {
-    navigate('/editor', {
-      state: {
-        templateId: template.id,
-        baseStyle: template.baseStyle,
-        sample: template.sample,
-        useSample: true
-      }
-    });
+  const handleSelectTemplate = (template) => {
+    fetchAndNavigate(template, true);
+  };
+
+  const handleUseSample = (template) => {
+    fetchAndNavigate(template, true);
   };
 
   const filteredTemplates = selectedCountry === 'all'

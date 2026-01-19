@@ -12,6 +12,8 @@ public class ResumeDTO {
     @NotBlank(message = "Full name is required")
     private String fullName;
 
+    private String jobTitle;
+
     @Email(message = "Invalid email format")
     private String email;
 
@@ -30,6 +32,9 @@ public class ResumeDTO {
 
     private String template;
 
+    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime updatedAt;
+
     @Data
     public static class Experience {
         private String company;
@@ -39,12 +44,12 @@ public class ResumeDTO {
         private String endDate;
         private String description;
         private List<String> highlights;
-        
+
         // For service-based companies with multiple clients
         private boolean serviceBased;
         private List<ClientProject> clientProjects;
     }
-    
+
     @Data
     public static class ClientProject {
         private String clientName;
@@ -74,4 +79,3 @@ public class ResumeDTO {
         private List<String> technologies;
     }
 }
-
