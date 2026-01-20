@@ -1,7 +1,11 @@
 package com.resumebuilder.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.resumebuilder.entity.AiProviderConfig;
+import com.resumebuilder.repository.AiProviderConfigRepository;
+import com.resumebuilder.repository.QuestionBankRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -10,24 +14,85 @@ import org.springframework.web.client.RestTemplate;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AiInterviewService {
 
-    @Autowired
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
+    private final QuestionBankRepository questionBankRepository;
+    private final AiSettingsService aiSettingsService;
+    private final AiProviderConfigRepository aiProviderConfigRepository;
 
-    @Value("${ai.api.url}")
-    private String aiApiUrl;
+    @Value("${ai.api.url:https://api.groq.com/openai/v1/chat/completions}")
+    private String defaultAiApiUrl;
 
-    @Value("${ai.api.key}")
-    private String aiApiKey;
+    @Value("${ai.api.key:}")
+    private String defaultAiApiKey;
 
-    @Value("${ai.api.model}")
-    private String aiModel;
-
-    @Autowired
-    private com.resumebuilder.repository.QuestionBankRepository questionBankRepository;
+    @Value("${ai.api.model:llama-3.3-70b-versatile}")
+    private String defaultAiModel;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // --- Unified Configuration Helper (Matches AiService) ---
+    private static class EffectiveConfig {
+        String url;
+        String key;
+        String model;
+        AiProviderConfig dbConfig;
+    }
+
+    private EffectiveConfig getEffectiveConfig() {
+        EffectiveConfig config = new EffectiveConfig();
+
+        // 0. Check Global Switch First
+        if (!aiSettingsService.canUseExternalAi()) {
+            config.url = defaultAiApiUrl;
+            config.key = defaultAiApiKey;
+            config.model = defaultAiModel;
+            log.info("INTERVIEW AI: External AI is DISABLED globally. Using default/fallback.");
+            return config;
+        }
+
+        // 1. Try to find specific INTERVIEW config first
+        Optional<AiProviderConfig> interviewConfig = aiProviderConfigRepository
+                .findByActiveTrueAndType(AiProviderConfig.ProviderType.INTERVIEW);
+
+        // 2. If not found, fall back to ANY active config (legacy behavior)
+        if (interviewConfig.isEmpty()) {
+            interviewConfig = aiProviderConfigRepository.findByActiveTrue();
+        }
+
+        if (interviewConfig.isPresent()) {
+            AiProviderConfig c = interviewConfig.get();
+            config.url = c.getApiUrl();
+            config.model = c.getModelName();
+            if (c.getApiKeys() != null && !c.getApiKeys().isEmpty()) {
+                config.key = c.getApiKeys().get(c.getCurrentKeyIndex() % c.getApiKeys().size());
+                log.info("INTERVIEW AI: Using DB Config. Provider: {}, Type: {}", c.getProviderName(), c.getType());
+            } else {
+                config.key = defaultAiApiKey;
+                log.info("INTERVIEW AI: Using DB Config (Fallback Key). Provider: {}", c.getProviderName());
+            }
+            config.dbConfig = c;
+        } else {
+            config.url = defaultAiApiUrl;
+            config.key = defaultAiApiKey;
+            config.model = defaultAiModel;
+            log.info("INTERVIEW AI: Using Default Application Properties Config.");
+        }
+        return config;
+    }
+
+    private void handleRateLimit(EffectiveConfig config) {
+        if (config.dbConfig != null && config.dbConfig.getApiKeys().size() > 1) {
+            int nextIndex = (config.dbConfig.getCurrentKeyIndex() + 1) % config.dbConfig.getApiKeys().size();
+            config.dbConfig.setCurrentKeyIndex(nextIndex);
+            aiProviderConfigRepository.save(config.dbConfig);
+            log.warn("Rate limit hit during INTERVIEW. Rotated to key index {} for provider {}", nextIndex,
+                    config.dbConfig.getProviderName());
+        }
+    }
 
     public Map<String, Object> generateInterviewResponse(Map<String, Object> request) {
         try {
@@ -38,7 +103,6 @@ public class AiInterviewService {
 
             // Check for fixed questions (Question Bank)
             List<String> fixedQuestions = null;
-            System.out.println("DEBUG: Profile keys received: " + profile.keySet());
             if (profile.containsKey("fixedQuestions")) {
                 fixedQuestions = (List<String>) profile.get("fixedQuestions");
             }
@@ -53,7 +117,6 @@ public class AiInterviewService {
                         if (bankOpt.isPresent()) {
                             String questionsJson = bankOpt.get().getQuestions();
                             if (questionsJson != null) {
-                                // Parse JSON: expecting [{"question": "..."}]
                                 List<Map<String, Object>> qList = objectMapper.readValue(questionsJson,
                                         new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {
                                         });
@@ -61,60 +124,43 @@ public class AiInterviewService {
                                 for (Map<String, Object> q : qList) {
                                     fixedQuestions.add((String) q.get("question"));
                                 }
-                                // Update profile for prompt generation
                                 profile.put("fixedQuestions", fixedQuestions);
-                                System.out.println("DEBUG: Fetched " + fixedQuestions.size()
-                                        + " questions from DB bankId=" + bankId);
                             }
                         }
                     } catch (Exception e) {
-                        System.err.println("Error fetching bank in fallback: " + e.getMessage());
+                        log.error("Error fetching bank in fallback: " + e.getMessage());
                     }
                 }
             }
 
-            if (fixedQuestions != null) {
-                System.out.println("DEBUG: fixedQuestions found. Size: " + fixedQuestions.size());
-            } else {
-                System.out.println("DEBUG: No fixedQuestions found in profile or DB.");
-            }
-
             String nextFixedQuestion = null;
             if (fixedQuestions != null && !fixedQuestions.isEmpty() && conversationHistory != null) {
-                // Count how many times interviewer has spoken (excluding current generation)
                 long interviewerCount = conversationHistory.stream()
                         .filter(m -> "interviewer".equals(m.get("role")))
                         .count();
-
-                System.out.println("DEBUG: Interviewer message count (history): " + interviewerCount);
-
-                // First message is Intro. So message #1 (index 0) corresponds to
-                // interviewerCount 1.
                 int questionIndex = (int) interviewerCount - 1;
-                System.out.println("DEBUG: Calculated questionIndex: " + questionIndex);
 
                 if (questionIndex >= 0 && questionIndex < fixedQuestions.size()) {
                     nextFixedQuestion = fixedQuestions.get(questionIndex);
-                    System.out.println("DEBUG: Selected nextFixedQuestion: " + nextFixedQuestion);
-                } else {
-                    System.out.println("DEBUG: questionIndex out of bounds or list exhausted.");
                 }
-            } else {
-                System.out.println("DEBUG: Skipping fixed question logic (list empty or history null).");
             }
 
             // Build system prompt based on interview type
-            // Pass true if we have a fixed question ready forcing AI to only evaluate
-            String systemPrompt = buildSystemPrompt(profile, nextFixedQuestion != null);
+            String systemPrompt = buildSystemPrompt(profile, nextFixedQuestion);
 
             // Build conversation messages
             List<Map<String, String>> messages = new ArrayList<>();
-            messages.add(Map.of("role", "system", "content", systemPrompt));
+            // Hack for Google/OpenRouter models that dislike "system" role or Developer
+            // Instructions
+            messages.add(Map.of("role", "user", "content", systemPrompt));
+            messages.add(Map.of("role", "assistant", "content",
+                    "Understood. I am ready to conduct the interview structure as requested."));
 
             // Add conversation history
             if (conversationHistory != null) {
                 for (Map<String, Object> msg : conversationHistory) {
-                    String role = msg.get("role").equals("interviewer") ? "assistant" : "user";
+                    // Normalize roles for API
+                    String role = "interviewer".equals(msg.get("role")) ? "assistant" : "user";
                     messages.add(Map.of("role", role, "content", (String) msg.get("content")));
                 }
             }
@@ -124,41 +170,27 @@ public class AiInterviewService {
                 messages.add(Map.of("role", "user", "content", currentResponse));
             }
 
-            // Call AI API
+            // Call AI API using Effective Configuration
             String aiResponse = callAiApi(messages);
             if (aiResponse == null)
                 aiResponse = "";
 
-            // If we have a fixed question, append it to the AI's evaluation
-            if (nextFixedQuestion != null) {
-                if (aiResponse.trim().isEmpty()) {
-                    aiResponse = nextFixedQuestion;
-                } else {
-                    aiResponse = aiResponse.trim() + "\n\n" + nextFixedQuestion;
-                }
-            }
+            // Removed force append logic to prevent double questioning.
+            // The AI is now instructed via System Prompt to ask the fixed question itself.
 
-            // Determine if interview should end (after 8-10 questions or when fixed list
-            // exhausted)
-            // Determine if interview should end (after 8-10 questions or when fixed list
-            // exhausted)
             boolean shouldEnd;
             if (fixedQuestions != null && !fixedQuestions.isEmpty()) {
-                // End ONLY if we have run out of fixed questions to ask
                 shouldEnd = (nextFixedQuestion == null);
             } else {
                 shouldEnd = conversationHistory != null && conversationHistory.size() >= 16;
             }
 
-            return Map.of(
-                    "response", aiResponse,
-                    "shouldEnd", shouldEnd);
+            return Map.of("response", aiResponse, "shouldEnd", shouldEnd);
 
-        } catch (
-
-        Exception e) {
-            e.printStackTrace();
-            return Map.of("response", "INTERNAL ERROR: " + e.toString() + " Message: " + e.getMessage(), "shouldEnd",
+        } catch (Exception e) {
+            log.error("Interview Generation Error", e);
+            return Map.of("response",
+                    "I encountered an error processing that. Please try again. (" + e.getMessage() + ")", "shouldEnd",
                     false);
         }
     }
@@ -170,7 +202,6 @@ public class AiInterviewService {
                     .get("conversationHistory");
             Map<String, Object> interviewData = (Map<String, Object>) request.get("interviewData");
 
-            // Build feedback prompt
             String feedbackPrompt = buildFeedbackPrompt(profile, conversationHistory, interviewData);
 
             List<Map<String, String>> messages = List.of(
@@ -187,14 +218,14 @@ public class AiInterviewService {
         }
     }
 
-    private String buildSystemPrompt(Map<String, Object> profile, boolean isFixedQuestion) {
+    private String buildSystemPrompt(Map<String, Object> profile, String nextFixedQuestion) {
         String role = (String) profile.get("role");
         String experience = (String) profile.get("experience");
         String skills = (String) profile.get("skills");
         String interviewType = (String) profile.get("interviewType");
         String customQuestions = (String) profile.getOrDefault("customQuestions", "");
-
         String accent = (String) profile.getOrDefault("interviewerAccent", "us");
+        String resumeContext = (String) profile.getOrDefault("resumeContext", "");
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are a professional technical interviewer conducting a ");
@@ -220,36 +251,50 @@ public class AiInterviewService {
         prompt.append(" for a ").append(role).append(" position.\n");
         prompt.append("Candidate Profile: Experience: ").append(experience).append(", Skills: ").append(skills)
                 .append("\n");
+
+        if (!resumeContext.isEmpty()) {
+            prompt.append("\n\nRESUME CONTEXT FROM CANDIDATE:\n");
+            prompt.append(resumeContext).append("\n");
+            prompt.append(
+                    "INSTRUCTION: Use the above resume context to contextualize your questions. Ask about their specific projects and experience mentioned in the resume. IMPORTANT: Ask only ONE question at a time.\n");
+        }
+
         if (!customQuestions.isEmpty())
             prompt.append("Focus: ").append(customQuestions).append("\n");
 
         prompt.append("\nYour Persona:\n");
-        if ("uk".equalsIgnoreCase(accent))
+        if ("uk".equalsIgnoreCase(accent)) {
+            prompt.append("- Use British English idioms. Tone: Polished, professional.\n");
+        } else {
+            // Default to Indian Professional as requested for "Calm Indian Voice"
+            prompt.append("- You are a Calm Indian Technical Interviewer.\n");
+            prompt.append("- Use clear, professional Indian English.\n");
             prompt.append(
-                    "- Use British English idioms and spelling. Tone: Polished, professional, slightly formal.\n");
-        else if ("in".equalsIgnoreCase(accent))
-            prompt.append(
-                    "- Use clear, professional Indian English. Tone: Respectful, encouraging, slightly formal. Use 'Please' often.\n");
-        else if ("au".equalsIgnoreCase(accent))
-            prompt.append(
-                    "- Use Australian English. Tone: Friendly, laid-back but professional. Use 'mate' occasionally if rapport is built.\n");
-        else
-            prompt.append("- Use American English. Tone: Direct, friendly, confident.\n");
+                    "- Tone: Very calm, respectful, patient, and encouraging (use words like 'Good', 'Okay', 'Right').\n");
+            prompt.append("- Speak at a moderate, steady pace.\n");
+        }
 
         prompt.append("\nInteraction Rules:\n");
         prompt.append(
-                "1. **CRITICAL:** Start your response by briefly evaluating the user's PREVIOUS answer (e.g., 'Good point on X' or 'That's not quite right because Y').\n");
+                "1. **CRITICAL:** Start by briefly evaluating/acknowledging the user's PREVIOUS answer (e.g., 'That's a great point', 'I see').\n");
+        prompt.append(
+                "2. **ONE QUESTION RULE:** Ask EXACTLY ONE question at a time. NEVER ask multiple questions in one turn.\n");
+        prompt.append(
+                "3. **Cross-Questions:** If the candidate's answer is interesting or needs clarification, ask ONE follow-up question. Do NOT move to the next main question yet. Treat the follow-up as a standalone turn.\n");
 
-        if (isFixedQuestion) {
-            prompt.append(
-                    "2. Provide a brief evaluation only. Do NOT ask a new question. The system will append the next question.\n");
+        if (nextFixedQuestion != null) {
+            prompt.append("4. **STRICT SCRIPT MODE:**\n");
+            prompt.append("   - You MUST ask the following question EXACTLY:\n");
+            prompt.append("     \"" + nextFixedQuestion + "\"\n");
+            prompt.append("   - Acknowledge the previous answer briefly, then ask ONLY the question above.\n");
+            prompt.append("   - Do NOT ask any other follow-up or extra questions.\n");
         } else {
-            prompt.append("2. Then, ask the NEXT question. Ask only ONE question at a time.\n");
-            prompt.append("3. Keep responses CONVERSATIONAL and BRIEF (2-4 sentences).\n");
+            prompt.append(
+                    "4. **Flow:** Keep the conversation smooth. Don't jump topics abruptly. Use transition phrases.\n");
         }
 
-        prompt.append("4. Adapt difficulty. Deep dive if answer is good. Hints if stuck.\n");
-        prompt.append("5. Be natural. Use fillers like 'I see', 'Interesting', 'Okay' to sound human.\n");
+        prompt.append("5. **Tone:** Be human, warm, encouraging, and professional. Avoid robotic repetition.\n");
+        prompt.append("6. **Length:** Keep your responses concise (2-3 sentences max).\n");
 
         return prompt.toString();
     }
@@ -283,34 +328,62 @@ public class AiInterviewService {
         return prompt.toString();
     }
 
+    // --- Core API Caller with Rotation Strategy ---
     private String callAiApi(List<Map<String, String>> messages) {
+        EffectiveConfig config = getEffectiveConfig();
+
+        // Fast-fail if not configured
+        if (config.key == null || config.key.trim().isEmpty() || config.key.equals("your-api-key")) {
+            return "I apologize, but the AI service is not properly configured. Please contact the administrator.";
+        }
+
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + aiApiKey);
-
-            Map<String, Object> requestBody = Map.of(
-                    "model", aiModel,
-                    "messages", messages,
-                    "temperature", 0.7,
-                    "max_tokens", 500);
-
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<Map> response = restTemplate.exchange(aiApiUrl, HttpMethod.POST, entity, Map.class);
-
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody != null && responseBody.containsKey("choices")) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
-                if (!choices.isEmpty()) {
-                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-                    return (String) message.get("content");
+            return executeRequest(config, messages);
+        } catch (Exception e) {
+            log.error("Primary AI Config Failed: {}", e.getMessage());
+            // Attempt rotation if rate limited or unauthorized
+            if (e.getMessage() != null && (e.getMessage().contains("429") || e.getMessage().contains("401"))) {
+                if (config.dbConfig != null) {
+                    handleRateLimit(config);
+                    // Retry once with new config (simplified recursion or re-fetch)
+                    log.info("Retrying with rotated key...");
+                    return executeRequest(getEffectiveConfig(), messages);
                 }
             }
-
-            return "I apologize, but I'm having trouble processing that. Could you please rephrase your answer?";
-
-        } catch (Exception e) {
-            throw new RuntimeException("AI API call failed: " + e.getMessage(), e);
+            return "I apologize, but I'm having trouble connecting to the AI interviewer right now.";
         }
+    }
+
+    private String executeRequest(EffectiveConfig config, List<Map<String, String>> messages) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Handle OpenRouter specifics (optional but good practice)
+        if (config.url.contains("openrouter")) {
+            headers.set("Authorization", "Bearer " + config.key);
+            headers.set("HTTP-Referer", "https://resume-builder.com"); // Required for OpenRouter
+            headers.set("X-Title", "Resume Builder AI");
+        } else {
+            headers.set("Authorization", "Bearer " + config.key);
+        }
+
+        Map<String, Object> requestBody = Map.of(
+                "model", config.model,
+                "messages", messages,
+                "temperature", 0.7,
+                "max_tokens", 500);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map> response = restTemplate.exchange(config.url, HttpMethod.POST, entity, Map.class);
+
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody != null && responseBody.containsKey("choices")) {
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+            if (!choices.isEmpty()) {
+                Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                return (String) message.get("content");
+            }
+        }
+        throw new RuntimeException("Empty response from AI provider");
     }
 }

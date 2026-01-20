@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '../api/adminApi';
 import ScaledPreview from '../components/LiveResumePreview';
+import RachitIntelligenceDashboard from '../components/RachitIntelligenceDashboard';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('api-keys'); // 'api-keys', 'users', 'templates'
+  const [activeTab, setActiveTab] = useState('rachit-intelligence');
 
   const [aiConfigs, setAiConfigs] = useState([]);
   const [showAddConfigForm, setShowAddConfigForm] = useState(false);
@@ -37,15 +38,12 @@ export default function AdminDashboard() {
 
   const checkAdminAndLoad = async () => {
     try {
-      // 1. Verify Admin Status first (Critical Security)
       const { isAdmin } = await adminApi.checkAdmin();
       if (!isAdmin) {
         navigate('/');
         return;
       }
       setIsAdmin(true);
-
-      // 2. Load all dashboard data in parallel for speed
       try {
         await Promise.all([
           loadAiConfigs(),
@@ -54,10 +52,8 @@ export default function AdminDashboard() {
           loadTemplates()
         ]);
       } catch (partialError) {
-        console.warn('Some dashboard data failed to load', partialError);
-        // Continue anyway so partial UI is visible
+        console.warn('Dashboard data partial load', partialError);
       }
-
     } catch (err) {
       navigate('/');
     } finally {
@@ -65,7 +61,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ===== AI CONFIG MANAGEMENT =====
+  // ===== AI CONFIG HANDLERS =====
   const loadAiConfigs = async () => {
     try {
       const configs = await adminApi.getAiConfigs();
@@ -129,7 +125,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ===== GENERAL API KEY MANAGEMENT =====
+  // ===== GENERAL KEY HANDLERS =====
   const loadGeneralApiKeys = async () => {
     try {
       const keys = await adminApi.getApiKeys();
@@ -163,11 +159,13 @@ export default function AdminDashboard() {
     }
   };
 
-  // ===== USER MANAGEMENT =====
+  // ===== USER HANDLERS =====
   const loadUsers = async () => {
     try {
       const response = await adminApi.getAllUsers();
-      setUsers(response || []);
+      // Filter out Super Admin so they cannot be modified/deleted from UI
+      const safeUsers = (response || []).filter(u => u.email !== 'rachitbishnoi28@gmail.com');
+      setUsers(safeUsers);
     } catch (err) {
       console.error('Failed to load users:', err);
     }
@@ -206,7 +204,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // ===== TEMPLATE MANAGEMENT =====
+  // ===== TEMPLATE HANDLERS =====
   const loadTemplates = async () => {
     try {
       const response = await adminApi.getAllTemplates();
@@ -221,8 +219,7 @@ export default function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('image', imageFile);
-
-      const newTemplate = await adminApi.generateTemplateFromImage(formData);
+      await adminApi.generateTemplateFromImage(formData);
       setSuccess('Template generated successfully from image!');
       setTemplateImage(null);
       await loadTemplates();
@@ -300,8 +297,16 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto invisible-scrollbar mb-8 border-b border-gray-200 dark:border-gray-800 whitespace-nowrap min-w-full">
+          <button
+            onClick={() => setActiveTab('rachit-intelligence')}
+            className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'rachit-intelligence'
+              ? 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+          >
+            🧠 Rachit Intelligence™
+          </button>
           <button
             onClick={() => setActiveTab('api-keys')}
             className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'api-keys'
@@ -332,83 +337,100 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'api-keys' && (
-          <div className="space-y-8">
-            <ApiKeysSection
-              aiConfigs={aiConfigs}
-              onAddKey={handleAddKeyToConfig}
-              onActivate={handleActivateConfig}
-              onDelete={handleDeleteConfig}
-              onAddConfig={handleAddConfig}
-              showAddConfigForm={showAddConfigForm}
-              setShowAddConfigForm={setShowAddConfigForm}
-              newConfig={newConfig}
-              setNewConfig={setNewConfig}
-              onSelectKey={handleSelectKey}
+        {
+          activeTab === 'rachit-intelligence' && (
+            <RachitIntelligenceDashboard
+              users={users}
+              templates={templates}
             />
+          )
+        }
 
-            <GeneralKeysSection
-              keys={generalApiKeys}
-              showAddForm={showAddKeyForm}
-              setShowAddForm={setShowAddKeyForm}
-              newKey={newKey}
-              setNewKey={setNewKey}
-              onAddKey={handleAddGeneralKey}
-              onDelete={handleDeleteGeneralKey}
+        {
+          activeTab === 'api-keys' && (
+            <div className="space-y-8">
+              <ApiKeysSection
+                aiConfigs={aiConfigs}
+                onAddKey={handleAddKeyToConfig}
+                onActivate={handleActivateConfig}
+                onDelete={handleDeleteConfig}
+                onAddConfig={handleAddConfig}
+                showAddConfigForm={showAddConfigForm}
+                setShowAddConfigForm={setShowAddConfigForm}
+                newConfig={newConfig}
+                setNewConfig={setNewConfig}
+                onSelectKey={handleSelectKey}
+              />
+
+              <GeneralKeysSection
+                keys={generalApiKeys}
+                showAddForm={showAddKeyForm}
+                setShowAddForm={setShowAddKeyForm}
+                newKey={newKey}
+                setNewKey={setNewKey}
+                onAddKey={handleAddGeneralKey}
+                onDelete={handleDeleteGeneralKey}
+              />
+            </div>
+          )
+        }
+
+        {
+          activeTab === 'users' && (
+            <UsersSection
+              users={users}
+              showAddForm={showAddUserForm}
+              setShowAddForm={setShowAddUserForm}
+              editingUser={editingUser}
+              setEditingUser={setEditingUser}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+              onDeleteUser={handleDeleteUser}
             />
-          </div>
-        )}
+          )
+        }
 
-        {activeTab === 'users' && (
-          <UsersSection
-            users={users}
-            showAddForm={showAddUserForm}
-            setShowAddForm={setShowAddUserForm}
-            editingUser={editingUser}
-            setEditingUser={setEditingUser}
-            onAddUser={handleAddUser}
-            onUpdateUser={handleUpdateUser}
-            onDeleteUser={handleDeleteUser}
-          />
-        )}
-
-        {activeTab === 'templates' && (
-          <TemplatesSection
-            templates={templates}
-            showCreator={showTemplateCreator}
-            setShowCreator={setShowTemplateCreator}
-            aiGenerating={aiGenerating}
-            onGenerateFromAI={handleGenerateTemplateFromAI}
-            onDelete={handleDeleteTemplate}
-            setPreviewTemplate={setPreviewTemplate}
-          />
-        )}
+        {
+          activeTab === 'templates' && (
+            <TemplatesSection
+              templates={templates}
+              showCreator={showTemplateCreator}
+              setShowCreator={setShowTemplateCreator}
+              aiGenerating={aiGenerating}
+              onGenerateFromAI={handleGenerateTemplateFromAI}
+              onDelete={handleDeleteTemplate}
+              setPreviewTemplate={setPreviewTemplate}
+            />
+          )
+        }
 
         {/* Template Preview Modal */}
-        {previewTemplate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewTemplate(null)}>
-            <div className="relative max-w-4xl max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-xl font-bold">{previewTemplate.name} Preview</h3>
-                <button onClick={() => setPreviewTemplate(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
-                <div className="max-w-3xl mx-auto shadow-2xl">
-                  <ScaledPreview template={previewTemplate.baseStyle} />
+        {
+          previewTemplate && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setPreviewTemplate(null)}>
+              <div className="relative max-w-4xl max-h-[90vh] w-full bg-white dark:bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
+                  <h3 className="text-xl font-bold">{previewTemplate.name} Preview</h3>
+                  <button onClick={() => setPreviewTemplate(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-100 dark:bg-[#0A0A0A]">
+                  <div className="max-w-3xl mx-auto shadow-2xl">
+                    <ScaledPreview template={previewTemplate.baseStyle} />
+                  </div>
+                </div>
+                <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">
+                  <button onClick={() => setPreviewTemplate(null)} className="btn btn-secondary">Close</button>
                 </div>
               </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#18181B]">
-                <button onClick={() => setPreviewTemplate(null)} className="btn btn-secondary">Close</button>
-              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )
+        }
+      </div >
+    </div >
   );
 }
 
@@ -434,15 +456,34 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
 
         {showAddConfigForm && (
           <form onSubmit={onAddConfig} className="bg-gray-50 dark:bg-[#27272A] rounded-lg p-4 md:p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Provider Name</label>
-              <input
-                placeholder="e.g. Groq, OpenAI, Anthropic"
-                value={newConfig.providerName}
-                onChange={e => setNewConfig({ ...newConfig, providerName: e.target.value })}
-                className="w-full"
-                required
-              />
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Provider Name</label>
+                <input
+                  placeholder="e.g. Groq, OpenAI"
+                  value={newConfig.providerName}
+                  onChange={e => setNewConfig({ ...newConfig, providerName: e.target.value })}
+                  className="w-full"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Provider Type</label>
+                <select
+                  value={newConfig.type || 'RESUME'}
+                  onChange={e => {
+                    const type = e.target.value;
+                    const defaults = type === 'INTERVIEW'
+                      ? { providerName: 'OpenRouter', modelName: 'google/gemma-3-12b-it:free', apiUrl: 'https://openrouter.ai/api/v1/chat/completions' }
+                      : { providerName: 'Groq', modelName: 'llama-3.3-70b-versatile', apiUrl: 'https://api.groq.com/openai/v1/chat/completions' };
+                    setNewConfig({ ...newConfig, type, ...defaults });
+                  }}
+                  className="w-full px-3 py-2 border rounded dark:bg-[#18181B] dark:border-gray-700 font-mono text-xs"
+                >
+                  <option value="RESUME">RESUME (Resume Building)</option>
+                  <option value="INTERVIEW">INTERVIEW (Mock Interviews)</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">API Endpoint URL</label>
@@ -477,6 +518,7 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-3">
                     {config.providerName.toUpperCase()}
+                    <span className="text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full uppercase tracking-tighter">{config.type || 'RESUME'}</span>
                     {config.active && <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">Current Provider</span>}
                   </h3>
                   <div className="flex flex-col mt-2 gap-1">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import authApi from '../api/authApi';
 
@@ -13,6 +13,9 @@ export default function Login() {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/';
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -64,7 +67,7 @@ export default function Login() {
     try {
       const response = await authApi.verifyOtp(email, otp);
       login(response.token, { id: response.userId, email: response.email });
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid OTP');
     } finally {

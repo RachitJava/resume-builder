@@ -8,4 +8,6 @@ public interface AiProviderConfigRepository extends JpaRepository<AiProviderConf
     Optional<AiProviderConfig> findByProviderName(String providerName);
 
     Optional<AiProviderConfig> findByActiveTrue();
+
+    Optional<AiProviderConfig> findByActiveTrueAndType(AiProviderConfig.ProviderType type);
 }

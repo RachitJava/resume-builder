@@ -41,9 +41,9 @@ public class AiService {
         AiProviderConfig dbConfig;
     }
 
-    private EffectiveConfig getEffectiveConfig() {
+    private EffectiveConfig getEffectiveConfig(AiProviderConfig.ProviderType type) {
         EffectiveConfig config = new EffectiveConfig();
-        Optional<AiProviderConfig> dbConfigOpt = aiProviderConfigRepository.findByActiveTrue();
+        Optional<AiProviderConfig> dbConfigOpt = aiProviderConfigRepository.findByActiveTrueAndType(type);
 
         if (dbConfigOpt.isPresent()) {
             AiProviderConfig c = dbConfigOpt.get();
@@ -51,21 +51,44 @@ public class AiService {
             config.model = c.getModelName();
             if (c.getApiKeys() != null && !c.getApiKeys().isEmpty()) {
                 config.key = c.getApiKeys().get(c.getCurrentKeyIndex() % c.getApiKeys().size());
-                log.info("Using AI Config from DATABASE. Provider: {}, KeyIndex: {}, KeyMask: ...{}",
-                        c.getProviderName(), c.getCurrentKeyIndex(),
+                log.info("Using AI Config from DATABASE. Provider: {}, Type: {}, KeyIndex: {}, KeyMask: ...{}",
+                        c.getProviderName(), type, c.getCurrentKeyIndex(),
                         config.key.length() > 6 ? config.key.substring(config.key.length() - 6) : "short");
             } else {
                 config.key = defaultAiApiKey;
-                log.info("Using AI Config from DATABASE (Fallback to Env Key). Provider: {}", c.getProviderName());
+                log.info("Using AI Config from DATABASE (Fallback to Env Key). Provider: {}, Type: {}",
+                        c.getProviderName(), type);
             }
             config.dbConfig = c;
         } else {
-            config.url = defaultAiApiUrl;
-            config.key = defaultAiApiKey;
-            config.model = defaultAiModel;
-            log.info("Using AI Config from APPLICATION.PROPERTIES (No active DB config). URL: {}", config.url);
+            // Fallback to GENERIC active config if specific type not found (migration
+            // support)
+            Optional<AiProviderConfig> genericConfig = aiProviderConfigRepository.findByActiveTrueAndType(null);
+            if (genericConfig.isPresent()) {
+                // Logic for generic fallback
+                AiProviderConfig c = genericConfig.get();
+                config.url = c.getApiUrl();
+                config.model = c.getModelName();
+                if (c.getApiKeys() != null && !c.getApiKeys().isEmpty()) {
+                    config.key = c.getApiKeys().get(c.getCurrentKeyIndex() % c.getApiKeys().size());
+                } else {
+                    config.key = defaultAiApiKey;
+                }
+                config.dbConfig = c;
+                log.info("Using Generic AI Config (Fallback for {}).", type);
+            } else {
+                config.url = defaultAiApiUrl;
+                config.key = defaultAiApiKey;
+                config.model = defaultAiModel;
+                log.info("Using AI Config from APPLICATION.PROPERTIES (No active DB config for {}). URL: {}", type,
+                        config.url);
+            }
         }
         return config;
+    }
+
+    private EffectiveConfig getEffectiveConfig() {
+        return getEffectiveConfig(AiProviderConfig.ProviderType.RESUME);
     }
 
     private void handleRateLimit(EffectiveConfig config) {

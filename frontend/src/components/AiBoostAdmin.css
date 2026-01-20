@@ -1,0 +1,272 @@
+/* AI Boost Admin Styles */
+.ai-boost-admin {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.ai-boost-admin h2 {
+    font-size: 28px;
+    margin-bottom: 24px;
+    color: #1a1a1a;
+}
+
+/* Setting Cards */
+.setting-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.setting-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.setting-card.built-in {
+    border-left: 4px solid #10b981;
+}
+
+.setting-card.ai-boost.enabled {
+    border-left: 4px solid #f59e0b;
+}
+
+.setting-card.ai-boost.disabled {
+    border-left: 4px solid #6b7280;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.card-header h3 {
+    font-size: 20px;
+    margin: 0;
+    color: #1a1a1a;
+}
+
+.status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 32px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 32px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #f59e0b;
+}
+
+input:checked+.slider:before {
+    transform: translateX(28px);
+}
+
+/* Card Body */
+.card-body {
+    color: #4b5563;
+}
+
+.description {
+    margin-bottom: 16px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.features {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0;
+}
+
+.features li {
+    padding: 8px 0;
+    font-size: 14px;
+    color: #374151;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat .label {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.stat .value {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.stat .value.free {
+    color: #10b981;
+}
+
+/* Warning Box */
+.warning-box {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px 16px;
+    margin: 16px 0;
+    border-radius: 4px;
+    color: #92400e;
+    font-size: 14px;
+}
+
+.ai-boost-details {
+    margin: 16px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.ai-boost-details p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Usage Stats */
+.usage-stats {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.usage-stats h4 {
+    font-size: 16px;
+    margin: 16px 0 12px 0;
+    color: #1a1a1a;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #f59e0b 100%);
+    transition: width 0.3s ease;
+}
+
+.usage-text {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 4px 0;
+}
+
+.cost-estimate {
+    font-size: 14px;
+    color: #374151;
+    margin: 4px 0 16px 0;
+}
+
+/* Recommendation Box */
+.recommendation-box {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 24px;
+}
+
+.recommendation-box h4 {
+    font-size: 16px;
+    margin: 0 0 12px 0;
+    color: #1e40af;
+}
+
+.recommendation-box p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1e3a8a;
+}
+
+/* Loading & Error States */
+.loading,
+.error {
+    text-align: center;
+    padding: 40px;
+    font-size: 16px;
+    color: #6b7280;
+}
+
+.error {
+    color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .ai-boost-admin {
+        padding: 16px;
+    }
+}

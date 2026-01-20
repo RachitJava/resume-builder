@@ -1,10 +1,14 @@
 package com.resumebuilder.config;
 
 import com.resumebuilder.entity.AiProviderConfig;
+import com.resumebuilder.entity.QuestionBank;
 import com.resumebuilder.entity.Template;
+import com.resumebuilder.entity.User;
 import com.resumebuilder.repository.AiProviderConfigRepository;
 import com.resumebuilder.repository.ApiKeyRepository;
+import com.resumebuilder.repository.QuestionBankRepository;
 import com.resumebuilder.repository.TemplateRepository;
+import com.resumebuilder.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,13 +25,18 @@ public class DatabaseInitializer implements CommandLineRunner {
     private final TemplateRepository templateRepository;
     private final AiProviderConfigRepository aiProviderConfigRepository;
     private final ApiKeyRepository apiKeyRepository;
+    private final QuestionBankRepository questionBankRepository;
+    private final UserRepository userRepository;
 
     public DatabaseInitializer(JdbcTemplate jdbcTemplate, TemplateRepository templateRepository,
-            AiProviderConfigRepository aiProviderConfigRepository, ApiKeyRepository apiKeyRepository) {
+            AiProviderConfigRepository aiProviderConfigRepository, ApiKeyRepository apiKeyRepository,
+            QuestionBankRepository questionBankRepository, UserRepository userRepository) {
         this.jdbcTemplate = jdbcTemplate;
         this.templateRepository = templateRepository;
         this.aiProviderConfigRepository = aiProviderConfigRepository;
         this.apiKeyRepository = apiKeyRepository;
+        this.questionBankRepository = questionBankRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -44,6 +53,7 @@ public class DatabaseInitializer implements CommandLineRunner {
         initializeAiConfig();
         initializeGeneralKeys();
         initializeAdminUsers();
+        initializeQuestionBanks();
     }
 
     @org.springframework.beans.factory.annotation.Value("${app.admin.emails:rachitbishnoi28@gmail.com,rachitbishnoi16@gmail.com}")
@@ -60,30 +70,62 @@ public class DatabaseInitializer implements CommandLineRunner {
         }
     }
 
+    private void initializeQuestionBanks() {
+        if (questionBankRepository.count() == 0) {
+            log.info("Seeding default Question Bank...");
+            if (adminEmailsStr == null || adminEmailsStr.isEmpty())
+                return;
+
+            String mainAdminEmail = adminEmailsStr.split(",")[0].trim();
+            Optional<User> adminUser = userRepository.findByEmail(mainAdminEmail);
+
+            if (adminUser.isPresent()) {
+                QuestionBank bank = new QuestionBank();
+                bank.setName("Java Interview Questions");
+                bank.setCategory("Technical");
+                bank.setDescription("Default seeded question bank (System)");
+                bank.setUser(adminUser.get());
+                bank.setActive(true);
+                bank.setQuestions(
+                        "[{\"question\": \"What is the difference between JDK, JRE, and JVM?\", \"answer\": \"JDK is for development, JRE is for running, JVM executes the bytecode.\", \"difficulty\": \"medium\", \"tags\": [\"java\", \"basics\"], \"topic\": \"Java Fundamentals\"}, {\"question\": \"What is Polymorphism?\", \"answer\": \"Polymorphism is the ability of an object to take on many forms.\", \"difficulty\": \"medium\", \"tags\": [\"oop\", \"java\"], \"topic\": \"OOP\"}]");
+                questionBankRepository.save(bank);
+                log.info("Seeded 'Java Interview Questions' bank for {}", mainAdminEmail);
+            } else {
+                log.warn("Could not seed Question Bank: Admin user {} not found", mainAdminEmail);
+            }
+        }
+    }
+
     private void initializeTemplates() {
         log.info("Ensuring default templates exist...");
-        List<Template> defaults = List.of(
-                new Template("modern-us", "Modern US", "usa",
-                        "Clean, ATS-friendly format popular in USA tech companies", "modern", null),
-                new Template("classic-us", "Classic US", "usa",
-                        "Traditional chronological format for corporate USA roles", "classic", null),
-                new Template("minimal-us", "Minimal US", "usa", "Ultra-clean design for creative US positions",
-                        "minimal", null),
-                new Template("modern-india", "Modern India", "india", "Contemporary format for Indian IT sector",
-                        "modern", null),
-                new Template("detailed-india", "Detailed India", "india", "Comprehensive format with all sections",
-                        "classic", null),
-                // New Templates
-                new Template("modern-uk", "Modern UK", "uk", "Clean CV format preferred in United Kingdom", "modern",
-                        null),
-                new Template("professional-uk", "Professional UK", "uk", "Standard UK corporate CV layout", "classic",
-                        null),
-                new Template("eu-standard", "Europass Style", "europe", "Standard format complying with EU guidelines",
-                        "classic", null),
-                new Template("modern-eu", "Modern Europe", "europe", "Contemporary European design", "modern", null),
-                new Template("modern-au", "Modern Australia", "australia", "Standard Australian resume format",
-                        "modern", null));
-        templateRepository.saveAll(defaults);
+        if (templateRepository.count() == 0) {
+            List<Template> defaults = List.of(
+                    new Template("modern-us", "Modern US", "usa",
+                            "Clean, ATS-friendly format popular in USA tech companies", "modern", null),
+                    new Template("classic-us", "Classic US", "usa",
+                            "Traditional chronological format for corporate USA roles", "classic", null),
+                    new Template("minimal-us", "Minimal US", "usa", "Ultra-clean design for creative US positions",
+                            "minimal", null),
+                    new Template("modern-india", "Modern India", "india", "Contemporary format for Indian IT sector",
+                            "modern", null),
+                    new Template("detailed-india", "Detailed India", "india", "Comprehensive format with all sections",
+                            "classic", null),
+                    // New Templates
+                    new Template("modern-uk", "Modern UK", "uk", "Clean CV format preferred in United Kingdom",
+                            "modern",
+                            null),
+                    new Template("professional-uk", "Professional UK", "uk", "Standard UK corporate CV layout",
+                            "classic",
+                            null),
+                    new Template("eu-standard", "Europass Style", "europe",
+                            "Standard format complying with EU guidelines",
+                            "classic", null),
+                    new Template("modern-eu", "Modern Europe", "europe", "Contemporary European design", "modern",
+                            null),
+                    new Template("modern-au", "Modern Australia", "australia", "Standard Australian resume format",
+                            "modern", null));
+            templateRepository.saveAll(defaults);
+        }
     }
 
     private void initializeAiConfig() {
@@ -94,10 +136,19 @@ public class DatabaseInitializer implements CommandLineRunner {
             if (name.contains("gemini") || name.contains("browser")) {
                 log.info("Removing unauthorized AI configuration: {}", config.getProviderName());
                 aiProviderConfigRepository.delete(config);
+                continue;
+            }
+
+            // AUTO-FIX: Update Rate-Limited Gemma Model to Gemini Flash (Free & Fast)
+            if ("google/gemma-3-12b-it:free".equals(config.getModelName())) {
+                log.info("Upgrading rate-limited Gemma model to Gemini 2.0 Flash for config: {}",
+                        config.getProviderName());
+                config.setModelName("google/gemini-2.0-flash-exp:free");
+                aiProviderConfigRepository.save(config);
             }
         }
 
-        // Ensure Groq is present and active in Strategy configs
+        // Ensure Groq is present and active (Default for Resume)
         Optional<AiProviderConfig> groqOpt = aiProviderConfigRepository.findByProviderName("groq");
         if (groqOpt.isEmpty()) {
             log.info("Initializing default Groq AI Strategy...");
@@ -106,8 +157,8 @@ public class DatabaseInitializer implements CommandLineRunner {
             groq.setApiUrl("https://api.groq.com/openai/v1/chat/completions");
             groq.setModelName("llama-3.3-70b-versatile");
             groq.setActive(true);
+            groq.setType(AiProviderConfig.ProviderType.RESUME);
 
-            // Use environment variable or valid placeholder
             String initialKey = System.getenv("GROQ_API_KEY");
             if (initialKey == null || initialKey.isEmpty()) {
                 initialKey = "gsk_placeholder_key_must_be_replaced";
@@ -121,6 +172,28 @@ public class DatabaseInitializer implements CommandLineRunner {
                 groq.setActive(true);
                 aiProviderConfigRepository.save(groq);
             }
+        }
+
+        // Ensure OpenRouter is present and active (Default for Interview)
+        // We use OpenRouter for interviews as it supports nice free Google models
+        Optional<AiProviderConfig> interviewOpt = aiProviderConfigRepository
+                .findByActiveTrueAndType(AiProviderConfig.ProviderType.INTERVIEW);
+        if (interviewOpt.isEmpty()) {
+            log.info("Initializing default OpenRouter Interview Strategy...");
+            AiProviderConfig interviewConfig = new AiProviderConfig();
+            interviewConfig.setProviderName("OpenRouter Interview");
+            interviewConfig.setApiUrl("https://openrouter.ai/api/v1/chat/completions");
+            interviewConfig.setModelName("google/gemini-2.0-flash-exp:free");
+            interviewConfig.setActive(true);
+            interviewConfig.setType(AiProviderConfig.ProviderType.INTERVIEW);
+
+            // Use a default open router key if available, or placeholder
+            String orKey = System.getenv("OPENROUTER_API_KEY");
+            if (orKey == null || orKey.isEmpty())
+                orKey = "sk-or-placeholder";
+            interviewConfig.setApiKeys(new java.util.ArrayList<>(List.of(orKey)));
+
+            aiProviderConfigRepository.save(interviewConfig);
         }
     }
 

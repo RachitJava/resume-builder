@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -18,6 +18,7 @@ import Welcome from './pages/Welcome';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -28,7 +29,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
@@ -90,6 +91,11 @@ function AppRoutes() {
           </ProtectedRoute>
         } />
         <Route path="mock-interview" element={
+          <ProtectedRoute>
+            <MockInterview />
+          </ProtectedRoute>
+        } />
+        <Route path="mock-interview/:meetingId" element={
           <ProtectedRoute>
             <MockInterview />
           </ProtectedRoute>

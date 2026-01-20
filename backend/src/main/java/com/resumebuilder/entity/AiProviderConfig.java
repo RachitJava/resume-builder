@@ -29,5 +29,13 @@ public class AiProviderConfig {
 
     private int currentKeyIndex = 0;
 
+    @Enumerated(EnumType.STRING)
+    private ProviderType type = ProviderType.RESUME;
+
     private boolean active = false;
+
+    public enum ProviderType {
+        RESUME,
+        INTERVIEW
+    }
 }

@@ -60,12 +60,27 @@ public class AiConfigController {
         if (!authService.isAdmin(authHeader)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Admin access required"));
         }
+
+        AiProviderConfig targetConfig = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Config not found"));
+        AiProviderConfig.ProviderType targetType = targetConfig.getType();
+
         List<AiProviderConfig> all = repository.findAll();
         for (AiProviderConfig c : all) {
-            c.setActive(c.getId().equals(id));
+            // Only deactivate configs of the SAME TYPE
+            // Legacy/Null types are treated as RESUME type for safety
+            AiProviderConfig.ProviderType cType = c.getType() != null ? c.getType()
+                    : AiProviderConfig.ProviderType.RESUME;
+            AiProviderConfig.ProviderType tType = targetType != null ? targetType
+                    : AiProviderConfig.ProviderType.RESUME;
+
+            if (cType == tType) {
+                c.setActive(c.getId().equals(id));
+            }
         }
         repository.saveAll(all);
-        return ResponseEntity.ok(Map.of("message", "Activated"));
+        return ResponseEntity
+                .ok(Map.of("message", "Activated for type: " + (targetType != null ? targetType : "RESUME")));
     }
 
     @PostMapping("/{id}/select-key/{index}")

@@ -32,7 +32,8 @@ public class SpaController {
     }
 
     @GetMapping(value = { "/", "/login", "/editor", "/editor/**", "/templates", "/job-match", "/admin",
-            "/admin/**" }, produces = MediaType.TEXT_HTML_VALUE)
+            "/admin/**", "/mock-interview", "/mock-interview/**", "/downloads", "/question-banks", "/learning",
+            "/pdf-viewer", "/welcome" }, produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<Resource> serveIndex() {
         Path indexPath = getIndexPath();
 

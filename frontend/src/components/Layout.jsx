@@ -186,21 +186,23 @@ export default function Layout({ children }) {
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 pb-20">
+      <main className={`mx-auto ${location.pathname.startsWith('/mock-interview') ? 'w-full p-0' : 'max-w-7xl px-4 md:px-6 py-8 pb-20'}`}>
         {children || <Outlet />}
       </main>
 
-      {/* Footer - Fixed to Bottom */}
-      <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black py-4 fixed bottom-0 left-0 right-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-sm">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900 dark:text-gray-50">DecisiveML</span>
+      {/* Footer - Fixed to Bottom - Hidden on Mock Interview */}
+      {!location.pathname.startsWith('/mock-interview') && (
+        <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black py-4 fixed bottom-0 left-0 right-0 z-30">
+          <div className="max-w-7xl mx-auto px-6 flex flex-row justify-between items-center text-sm">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-900 dark:text-gray-50">DecisiveML</span>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
+              By <span className="font-medium">Rachit</span>
+            </p>
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-xs">
-            By <span className="font-medium">Rachit</span>
-          </p>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

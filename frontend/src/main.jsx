@@ -9,8 +9,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
-// Auto-refresh on app launch (PWA update check)
-if ('serviceWorker' in navigator) {
+// Auto-refresh on app launch (PWA update check) - Only in Production
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(registration => {
       // Helper to check for updates
@@ -41,6 +41,8 @@ if ('serviceWorker' in navigator) {
           }
         });
       });
+    }).catch(err => {
+      console.warn('SW registration failed:', err);
     });
   });
 }

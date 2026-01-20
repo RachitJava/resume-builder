@@ -30,7 +30,16 @@ public class QuestionBankController {
             return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
         }
 
+        System.out.println("DEBUG: Fetching banks for " + user.getEmail() + " (Admin: " + user.isAdmin() + ")");
+
+        if (user.isAdmin()) {
+            List<QuestionBank> allBanks = questionBankService.getAllQuestionBanks();
+            System.out.println("DEBUG: Admin found " + allBanks.size() + " banks.");
+            return ResponseEntity.ok(allBanks);
+        }
+
         List<QuestionBank> banks = questionBankService.getUserQuestionBanks(user);
+        System.out.println("DEBUG: User found " + banks.size() + " banks.");
         return ResponseEntity.ok(banks);
     }
 
