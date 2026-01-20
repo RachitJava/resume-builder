@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function QuestionBanks() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [banks, setBanks] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
@@ -11,13 +13,17 @@ export default function QuestionBanks() {
         name: '',
         category: 'technical',
         description: '',
-        questions: []
+        questions: [],
+        isPublic: false,
+        isAnonymous: false
     });
     const [uploadData, setUploadData] = useState({
         name: '',
         category: 'technical',
         description: '',
-        file: null
+        file: null,
+        isPublic: false,
+        isAnonymous: false
     });
     const [editingId, setEditingId] = useState(null);
     const [currentQuestion, setCurrentQuestion] = useState({
@@ -26,6 +32,29 @@ export default function QuestionBanks() {
         difficulty: 'medium',
         tags: ''
     });
+
+    const [processingBanks, setProcessingBanks] = useState({}); // { id: progress }
+
+    // Simulate Python Feed Progress
+    const triggerPythonFeed = (bankId) => {
+        setProcessingBanks(prev => ({ ...prev, [bankId]: 0 }));
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    setProcessingBanks(prev => {
+                        const next = { ...prev };
+                        delete next[bankId];
+                        return next;
+                    });
+                }, 1000);
+            } else {
+                setProcessingBanks(prev => ({ ...prev, [bankId]: progress }));
+            }
+        }, 100); // 2 seconds total
+    };
 
     const categories = [
         { id: 'hr', name: 'HR', icon: '👔' },
@@ -101,6 +130,9 @@ export default function QuestionBanks() {
                 : '/api/question-banks';
             const method = editingId ? 'PUT' : 'POST';
 
+            console.log(`🚀 Sending ${method} request to ${url}`);
+            console.log('📦 Data payload:', newBank);
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -111,8 +143,13 @@ export default function QuestionBanks() {
             });
 
             if (response.ok) {
+                const savedBank = await response.json();
+                console.log('✅ Bank saved successfully:', savedBank);
                 await fetchBanks();
+                alert('Question bank updated successfully!');
                 closeCreateModal();
+                // Trigger feed visual
+                triggerPythonFeed(savedBank.id || editingId);
             } else {
                 alert(`Failed to ${editingId ? 'update' : 'create'} question bank`);
             }
@@ -133,7 +170,9 @@ export default function QuestionBanks() {
             name: bank.name,
             category: bank.category,
             description: bank.description || '',
-            questions: questions
+            questions: questions,
+            isPublic: bank.isPublic !== undefined ? bank.isPublic : (bank.public !== undefined ? bank.public : false),
+            isAnonymous: bank.isAnonymous !== undefined ? bank.isAnonymous : (bank.anonymous !== undefined ? bank.anonymous : false)
         });
         setShowCreateModal(true);
     };
@@ -141,7 +180,7 @@ export default function QuestionBanks() {
     const closeCreateModal = () => {
         setShowCreateModal(false);
         setEditingId(null);
-        setNewBank({ name: '', category: 'technical', description: '', questions: [] });
+        setNewBank({ name: '', category: 'technical', description: '', questions: [], isPublic: false, isAnonymous: false });
     };
 
     const uploadFile = async () => {
@@ -157,6 +196,8 @@ export default function QuestionBanks() {
             formData.append('file', uploadData.file);
             formData.append('name', uploadData.name);
             formData.append('category', uploadData.category);
+            formData.append('isPublic', uploadData.isPublic);
+            formData.append('isAnonymous', uploadData.isAnonymous);
             if (uploadData.description) {
                 formData.append('description', uploadData.description);
             }
@@ -170,9 +211,11 @@ export default function QuestionBanks() {
             });
 
             if (response.ok) {
+                const savedBank = await response.json();
                 await fetchBanks();
                 setShowUploadModal(false);
-                setUploadData({ name: '', category: 'technical', description: '', file: null });
+                setUploadData({ name: '', category: 'technical', description: '', file: null, isPublic: false, isAnonymous: false });
+                triggerPythonFeed(savedBank.id);
             } else {
                 const error = await response.json();
                 alert('Failed to upload: ' + (error.error || 'Unknown error'));
@@ -253,34 +296,78 @@ export default function QuestionBanks() {
                                 className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-all"
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="text-3xl">{category?.icon || '📝'}</div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-3xl">{category?.icon || '📝'}</div>
+                                        <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${(bank.isPublic || bank.public) ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'}`}>
+                                            {(bank.isPublic || bank.public) ? 'Public' : 'Private'}
+                                        </div>
+                                    </div>
                                     <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleEdit(bank)}
-                                            className="text-blue-500 hover:text-blue-700 text-sm"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => deleteBank(bank.id)}
-                                            className="text-red-500 hover:text-red-700 text-sm"
-                                        >
-                                            Delete
-                                        </button>
+                                        {(user?.id === bank.user?.id || user?.isAdmin) && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleEdit(bank)}
+                                                    className="text-blue-500 hover:text-blue-700 text-sm"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteBank(bank.id)}
+                                                    className="text-red-500 hover:text-red-700 text-sm"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <h3 className="font-semibold text-gray-900 dark:text-gray-50 mb-2">
                                     {bank.name}
                                 </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 h-10 overflow-hidden text-ellipsis line-clamp-2">
                                     {bank.description || 'No description'}
                                 </p>
+                                <div className="flex items-center gap-2 mb-4 text-[10px] text-gray-500 font-medium">
+                                    <span className="flex items-center gap-1 border border-gray-200 dark:border-gray-800 px-2 py-0.5 rounded">
+                                        👤 {(bank.isAnonymous || bank.anonymous) ? 'Anonymous' : bank.user?.email || 'Unknown'}
+                                    </span>
+                                </div>
                                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                     <span>{questions.length} questions</span>
-                                    <span className="px-2 py-1 bg-gray-100 dark:bg-gray-900 rounded">
+                                    <span className="px-2 py-1 border border-gray-100 dark:border-gray-900 rounded">
                                         {category?.name}
                                     </span>
                                 </div>
+                                {processingBanks[bank.id] !== undefined && (
+                                    <div className="mt-4 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                                        <div className="flex items-center gap-2">
+                                            <div className="relative w-8 h-8">
+                                                <svg className="w-full h-full transform -rotate-90">
+                                                    <circle
+                                                        cx="16" cy="16" r="14"
+                                                        stroke="currentColor" strokeWidth="3" fill="transparent"
+                                                        className="text-gray-200 dark:text-gray-700"
+                                                    />
+                                                    <circle
+                                                        cx="16" cy="16" r="14"
+                                                        stroke="currentColor" strokeWidth="3" fill="transparent"
+                                                        strokeDasharray={88} // 2 * pi * 14 ≈ 88
+                                                        strokeDashoffset={88 - (88 * processingBanks[bank.id]) / 100}
+                                                        className="text-blue-500 transition-all duration-100 ease-linear"
+                                                    />
+                                                </svg>
+                                                <div className="absolute inset-0 flex items-center justify-center text-[8px] font-bold text-blue-600 dark:text-blue-400">
+                                                    {processingBanks[bank.id]}%
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-blue-700 dark:text-blue-300">Rachit Intelligence™</span>
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400">Processing Feed...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                                }
                             </div>
                         );
                     })}
@@ -355,6 +442,33 @@ export default function QuestionBanks() {
                                         className="w-full"
                                     />
                                 </div>
+
+                                <div className="flex flex-col gap-3 pt-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isPublic"
+                                            checked={newBank.isPublic}
+                                            onChange={(e) => setNewBank({ ...newBank, isPublic: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor="isPublic" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                            Make this Question Bank Public (Visible to everyone)
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isAnonymous"
+                                            checked={newBank.isAnonymous}
+                                            onChange={(e) => setNewBank({ ...newBank, isAnonymous: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor="isAnonymous" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                            Hide my identity (Display as Anonymous)
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Add Question Form */}
@@ -414,7 +528,7 @@ export default function QuestionBanks() {
                                         {newBank.questions.map((q, idx) => (
                                             <div
                                                 key={idx}
-                                                className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg flex items-start justify-between"
+                                                className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 p-3 rounded-lg flex items-start justify-between"
                                             >
                                                 <div className="flex-1">
                                                     <div className="font-medium text-sm text-gray-900 dark:text-gray-50">
@@ -523,6 +637,33 @@ export default function QuestionBanks() {
                                         AI will automatically extract questions and answers from your file
                                     </p>
                                 </div>
+
+                                <div className="flex flex-col gap-3 pt-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isPublicUpload"
+                                            checked={uploadData.isPublic}
+                                            onChange={(e) => setUploadData({ ...uploadData, isPublic: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor="isPublicUpload" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                            Make this Question Bank Public
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="isAnonymousUpload"
+                                            checked={uploadData.isAnonymous}
+                                            onChange={(e) => setUploadData({ ...uploadData, isAnonymous: e.target.checked })}
+                                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        <label htmlFor="isAnonymousUpload" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                                            Hide my identity (Display as Anonymous)
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex gap-3">
@@ -545,6 +686,6 @@ export default function QuestionBanks() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

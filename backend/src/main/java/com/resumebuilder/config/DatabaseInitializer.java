@@ -45,6 +45,14 @@ public class DatabaseInitializer implements CommandLineRunner {
         try {
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE");
             log.info("Successfully checked/updated users table with is_admin column.");
+
+            // Fix for QuestionBank columns
+            jdbcTemplate.execute(
+                    "ALTER TABLE interview_question_banks ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE");
+            jdbcTemplate.execute(
+                    "ALTER TABLE interview_question_banks ADD COLUMN IF NOT EXISTS is_anonymous BOOLEAN DEFAULT FALSE");
+            log.info(
+                    "Successfully checked/updated interview_question_banks table with is_public and is_anonymous columns.");
         } catch (Exception e) {
             log.error("Error updating database schema: " + e.getMessage());
         }

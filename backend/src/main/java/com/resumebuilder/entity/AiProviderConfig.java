@@ -36,6 +36,8 @@ public class AiProviderConfig {
 
     public enum ProviderType {
         RESUME,
-        INTERVIEW
+        INTERVIEW,
+        TTS,
+        MAIL
     }
 }

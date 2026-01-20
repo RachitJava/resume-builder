@@ -11,6 +11,9 @@ import java.util.List;
 public interface QuestionBankRepository extends JpaRepository<QuestionBank, String> {
     List<QuestionBank> findByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
 
+    @org.springframework.data.jpa.repository.Query("SELECT q FROM QuestionBank q WHERE (q.isPublic = true OR q.user = :user) AND q.isActive = true ORDER BY q.createdAt DESC")
+    List<QuestionBank> findVisibleBanks(User user);
+
     List<QuestionBank> findByUserAndCategoryAndIsActiveTrueOrderByCreatedAtDesc(User user, String category);
 
     // AI Syncing

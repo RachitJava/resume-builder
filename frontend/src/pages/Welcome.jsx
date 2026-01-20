@@ -4,6 +4,14 @@ import { useAuth } from '../context/AuthContext';
 export default function Welcome() {
     const { user } = useAuth();
 
+    const getFirstName = (email) => {
+        if (!email) return 'User';
+        const namePart = email.split('@')[0];
+        const firstMatch = namePart.match(/[a-zA-Z]+/);
+        const name = firstMatch ? firstMatch[0] : 'User';
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    };
+
     const features = [
         {
             id: 'resume',
@@ -20,10 +28,10 @@ export default function Welcome() {
             title: 'AI Mock Interview',
             description: 'Practice with our AI interviewer and get instant, detailed feedback',
             icon: '🎯',
-            gradient: 'from-purple-600 to-pink-600',
+            gradient: 'from-blue-600 to-indigo-600',
             link: '/mock-interview',
             stats: ['Real-time AI', 'Instant Feedback', 'All Rounds'],
-            color: 'purple'
+            color: 'blue'
         },
         {
             id: 'learning',
@@ -47,28 +55,23 @@ export default function Welcome() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-black dark:to-gray-900">
-            {/* Hero Section */}
-            <div className="relative overflow-hidden">
-                {/* Animated Background */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl animate-pulse"></div>
-                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 dark:bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-                </div>
+        <div className="min-h-screen bg-white dark:bg-black">
+            {/* Simple Background */}
+            <div className="relative">
 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-20 pb-12 md:pb-16">
                     {/* Welcome Message */}
                     <div className="text-center mb-16">
                         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-full mb-6 shadow-sm">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Welcome back, {user?.email?.split('@')[0] || 'User'}!
+                                Welcome back, {getFirstName(user?.email)}!
                             </span>
                         </div>
 
-                        <h1 className="text-5xl md:text-6xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
+                        <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white mb-6 tracking-tight leading-tight">
                             Your Career
-                            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            <span className="block text-blue-600 dark:text-blue-400">
                                 Success Platform
                             </span>
                         </h1>
@@ -79,7 +82,7 @@ export default function Welcome() {
                     </div>
 
                     {/* Main Feature Cards */}
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12 md:mb-16">
                         {features.map((feature) => (
                             <Link
                                 key={feature.id}
@@ -97,7 +100,7 @@ export default function Welcome() {
                                     </div>
 
                                     {/* Title & Description */}
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
+                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-700 group-hover:to-blue-500 group-hover:bg-clip-text transition-all duration-300">
                                         {feature.title}
                                     </h2>
                                     <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
@@ -132,11 +135,11 @@ export default function Welcome() {
                     </div>
 
                     {/* Benefits Grid */}
-                    <div className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-lg">
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+                    <div className="border border-gray-100 dark:border-gray-800 rounded-3xl p-6 md:p-8 shadow-sm">
+                        <h3 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">
                             Why Choose DecisiveML?
                         </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
                             {benefits.map((benefit, idx) => (
                                 <div
                                     key={idx}
@@ -157,7 +160,7 @@ export default function Welcome() {
                     </div>
 
                     {/* Quick Stats */}
-                    <div className="grid grid-cols-3 gap-6 mt-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mt-12">
                         {[
                             { label: 'Resumes Created', value: '10K+', icon: '📄' },
                             { label: 'Interviews Practiced', value: '5K+', icon: '🎯' },

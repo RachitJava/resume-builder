@@ -313,7 +313,7 @@ const RachitIntelligenceDashboard = ({ users = [], templates = [] }) => {
                                 {Object.values(USE_CASES).map(useCase => (
                                     <div
                                         key={useCase.id}
-                                        className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedUseCase === useCase.id ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500 ring-offset-2 dark:ring-offset-gray-900' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+                                        className={`p-4 border rounded-xl cursor-pointer transition-all ${selectedUseCase === useCase.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                                         onClick={() => handleUseCaseChange(useCase.id)}
                                     >
                                         <div className="text-2xl mb-2">{useCase.icon}</div>
@@ -336,15 +336,15 @@ const RachitIntelligenceDashboard = ({ users = [], templates = [] }) => {
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-bold flex items-center gap-2">
                                             📚 Question Banks
-                                            {selectedUseCase !== 'manual' && selectedTables.has('question_banks') && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Required</span>}
+                                            {selectedUseCase !== 'manual' && selectedTables.has('question_banks') && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Required</span>}
                                         </h3>
-                                        <input type="checkbox" checked={selectedTables.has('question_banks')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-purple-600" />
+                                        <input type="checkbox" checked={selectedTables.has('question_banks')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-blue-600" />
                                     </div>
                                     <p className="text-sm text-gray-500 mb-2">
                                         {questionBanks.length} available banks. <br />
                                         {selectedBankIds.size} selected for sync.
                                     </p>
-                                    <div className="text-xs text-purple-600 font-medium">
+                                    <div className="text-xs text-blue-600 font-medium">
                                         Feeds interview knowledge →
                                     </div>
                                 </div>
@@ -357,15 +357,15 @@ const RachitIntelligenceDashboard = ({ users = [], templates = [] }) => {
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-bold flex items-center gap-2">
                                             👥 Users Table
-                                            {selectedUseCase !== 'manual' && selectedTables.has('users') && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Required</span>}
+                                            {selectedUseCase !== 'manual' && selectedTables.has('users') && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Required</span>}
                                         </h3>
-                                        <input type="checkbox" checked={selectedTables.has('users')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-purple-600" />
+                                        <input type="checkbox" checked={selectedTables.has('users')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-blue-600" />
                                     </div>
                                     <p className="text-sm text-gray-500 mb-2">
                                         {users.length} registered users. <br />
                                         Metadata (ID, Email, Roles).
                                     </p>
-                                    <div className="text-xs text-purple-600 font-medium">
+                                    <div className="text-xs text-blue-600 font-medium">
                                         Feeds personalization engine →
                                     </div>
                                 </div>
@@ -378,15 +378,15 @@ const RachitIntelligenceDashboard = ({ users = [], templates = [] }) => {
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-bold flex items-center gap-2">
                                             🎨 Templates Table
-                                            {selectedUseCase !== 'manual' && selectedTables.has('templates') && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Required</span>}
+                                            {selectedUseCase !== 'manual' && selectedTables.has('templates') && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Required</span>}
                                         </h3>
-                                        <input type="checkbox" checked={selectedTables.has('templates')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-purple-600" />
+                                        <input type="checkbox" checked={selectedTables.has('templates')} readOnly disabled={selectedUseCase !== 'manual'} className="w-5 h-5 accent-blue-600" />
                                     </div>
                                     <p className="text-sm text-gray-500 mb-2">
                                         {templates.length} templates available. <br />
                                         Structure and Design Metadata.
                                     </p>
-                                    <div className="text-xs text-purple-600 font-medium">
+                                    <div className="text-xs text-blue-600 font-medium">
                                         Feeds design intelligence →
                                     </div>
                                 </div>
@@ -561,13 +561,18 @@ const QuestionBanksTab = ({ questionBanks, questions, onLoadQuestions, onRefresh
                                     type="checkbox"
                                     checked={selectedBankIds.has(bank.id)}
                                     onChange={() => onToggleBank(bank.id)}
-                                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                 />
                             </div>
                             <div className="bank-info">
                                 <h4>{bank.name || bank.title}</h4>
-                                <p className="bank-meta">
+                                <p className="bank-meta text-[10px]">
                                     {bank.category} • {JSON.parse(bank.questions || '[]').length} questions
+                                    {bank.usageCount > 0 && (
+                                        <span className="ml-2 text-blue-600 font-bold">
+                                            📈 {(bank.usageCount * 1.5).toFixed(1)}k uses
+                                        </span>
+                                    )}
                                 </p>
                             </div>
                             <div className="bank-actions">

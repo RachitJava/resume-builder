@@ -35,9 +35,18 @@ export default function MockInterview() {
     // Auto-Fill Profile from Auth
     useEffect(() => {
         if (user) {
+            let extractedName = user.name;
+            if (!extractedName && user.email) {
+                // Fallback: cleaning email handle (rachitbishnoi28 -> Rachit)
+                const handle = user.email.split('@')[0];
+                const noNumbers = handle.replace(/[0-9]/g, ''); // removed digits
+                const firstName = noNumbers.split(/[._]/)[0];   // take first part if dot/underscore
+                extractedName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+            }
+
             setProfile(prev => ({
                 ...prev,
-                name: user.name || user.email.split('@')[0],  // Fallback to email prefix if name missing
+                name: extractedName || 'Candidate',
                 email: user.email
             }));
         }
@@ -60,7 +69,7 @@ export default function MockInterview() {
         interviewerVoice: 'en-US-GuyNeural',
         interviewerAccent: 'us',
         enableVoice: true,
-        questionBankId: '',
+        questionBankIds: [],
         fixedQuestions: []
     });
     const [userBanks, setUserBanks] = useState([]);
@@ -74,6 +83,8 @@ export default function MockInterview() {
         questionCount: 0,
         responses: []
     });
+    const [isBankDropdownOpen, setIsBankDropdownOpen] = useState(false);
+    const [feedSearch, setFeedSearch] = useState('');
 
     const [isHandRaised, setIsHandRaised] = useState(false);
     const isHandRaisedRef = useRef(false);
@@ -133,7 +144,9 @@ export default function MockInterview() {
     const incomingScreenVideoRef = useRef(null); // Ref for incoming screen share video element
     const activeCallRef = useRef(null); // Track active call for Guest to enable track swapping
     const aiImageRef = useRef(null); // Ref for AI image (stable access)
+    const aiVideoRef = useRef(null); // Ref for AI video feed
     const screenShareCallRef = useRef(null); // Track Guest's outbound screen share call
+    const isManualStopRef = useRef(true); // Track if mic was intentionally stopped by user
     const [roleConfirmed, setRoleConfirmed] = useState(false); // New: Track if isHost is definitely correct
 
     // Legacy single remote refs (deprecated but kept for safety if needed)
@@ -258,6 +271,7 @@ export default function MockInterview() {
     const animationFrameRef = useRef(null);
     const [isRecording, setIsRecording] = useState(false);
     const [recordedChunks, setRecordedChunks] = useState([]);
+    const [showReactions, setShowReactions] = useState(false); // New state for header reaction menu
 
     // Signal Screen Share Status to Host (as Guest)
     useEffect(() => {
@@ -797,7 +811,9 @@ export default function MockInterview() {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
             const userCameraVideo = cameraVideoRef.current;
+
             const aiImg = aiImageRef.current;
+            const aiVideo = aiVideoRef.current; // New: AI Video Feed support
 
             if (!canvas || !ctx) return;
 
@@ -806,8 +822,81 @@ export default function MockInterview() {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Get video elements
-            // Check if screen sharing - use hook's isScreenSharing flag via ref
             let screenVideoEl = null;
+
+            // HELPER: Format Name
+            const formatName = (rawName) => {
+                if (!rawName) return 'Guest';
+                if (rawName.toLowerCase().includes('ai interview') || rawName === 'AI') return 'AI';
+                if (rawName.toLowerCase() === 'you') return 'You';
+                const firstPart = rawName.split(/[\s@.]/)[0];
+                const nameOnly = firstPart.replace(/[0-9]+$/, '');
+                return nameOnly.charAt(0).toUpperCase() + nameOnly.slice(1);
+            };
+
+            // HELPER: Check Mic Status
+            const getMicStatus = (participantType, streamObj) => {
+                const now = Date.now();
+                if (participantType === 'Ai') {
+                    // Blink mic when AI is speaking (TTS active)
+                    if (isSpeakingRef.current) {
+                        return Math.floor(now / 200) % 2 === 0; // Blink every 200ms
+                    }
+                    return false;
+                }
+                if (participantType === 'You') {
+                    // Check local video ref directly as it holds the live stream
+                    if (cameraVideoRef.current && cameraVideoRef.current.srcObject) {
+                        const tracks = cameraVideoRef.current.srcObject.getAudioTracks();
+                        return tracks.length > 0 && tracks[0].enabled;
+                    }
+                    return false;
+                }
+                if (participantType === 'Guest') {
+                    if (!streamObj) return false;
+                    const track = streamObj.getAudioTracks()[0];
+                    return track ? track.enabled : false;
+                }
+                return false;
+            };
+
+            // HELPER: Draw Mic Icon
+            const drawMicIcon = (ctx, x, y, isMicOn) => {
+                ctx.save();
+                ctx.translate(x, y);
+
+                // Body
+                ctx.fillStyle = isMicOn ? '#4ade80' : '#ef4444'; // Green-400 : Red-500
+                ctx.strokeStyle = isMicOn ? '#4ade80' : '#ef4444';
+                ctx.lineWidth = 1.5;
+
+                // Mic capsule
+                ctx.beginPath();
+                ctx.roundRect(3, 0, 6, 9, 3);
+                ctx.fill();
+
+                // Stand
+                ctx.beginPath();
+                ctx.moveTo(6, 9);
+                ctx.lineTo(6, 12);
+                ctx.moveTo(3, 12);
+                ctx.lineTo(9, 12);
+                ctx.stroke();
+
+                // Slash if muted
+                if (!isMicOn) {
+                    ctx.strokeStyle = '#fff'; // White slash contrast
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(1, 1);
+                    ctx.lineTo(11, 13);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+                return 16; // Return width usage
+            };
+
             // HELPER: Draw Emojis for a given participant
             const drawParticipantEmojis = (targetId, x, y, w, h) => {
                 const now = Date.now();
@@ -913,77 +1002,243 @@ export default function MockInterview() {
                     ctx.fillStyle = '#121212';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    const sidebarWidth = Math.floor(canvas.width * 0.22);
-                    const contentWidth = canvas.width - sidebarWidth;
-                    const contentHeight = canvas.height;
+                    // Responsive Layout Detection
+                    const isMobile = canvas.width < canvas.height;
 
-                    const videoWidth = activeScreenEl.videoWidth || 1280;
-                    const videoHeight = activeScreenEl.videoHeight || 720;
-                    const videoAspect = videoWidth / videoHeight;
-                    const contentAspect = contentWidth / contentHeight;
+                    if (isMobile) {
+                        // --- MOBILE VERTICAL LAYOUT (Participants on TOP) ---
 
-                    let drawWidth, drawHeight, offsetX, offsetY;
+                        // 1. Advanced Gradient Background
+                        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                        gradient.addColorStop(0, '#2c2c2e');
+                        gradient.addColorStop(1, '#000000');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                    if (videoAspect > contentAspect) {
-                        drawWidth = contentWidth;
-                        drawHeight = contentWidth / videoAspect;
-                        offsetX = 0;
-                        offsetY = (contentHeight - drawHeight) / 2;
-                    } else {
-                        drawHeight = contentHeight;
-                        drawWidth = contentHeight * videoAspect;
-                        offsetX = (contentWidth - drawWidth) / 2;
-                        offsetY = 0;
-                    }
+                        // Participants row at top (18%), Screen Share filling the rest below
+                        const pipHeight = Math.floor(canvas.height * 0.18);
+                        const contentHeight = canvas.height - pipHeight;
+                        const contentWidth = canvas.width;
+                        const contentTapY = pipHeight; // Start screen share below pips
 
-                    ctx.drawImage(activeScreenEl, offsetX, offsetY, drawWidth, drawHeight);
+                        // Draw Screen Share (Below Pips)
+                        const videoWidth = activeScreenEl.videoWidth || 1280;
+                        const videoHeight = activeScreenEl.videoHeight || 720;
+                        const videoAspect = videoWidth / videoHeight;
+                        const contentAspect = contentWidth / contentHeight;
 
-                    // --- SIDEBAR ---
-                    const padding = 16;
-                    const pipWidth = sidebarWidth - (padding * 2);
-                    const pipHeight = (pipWidth * 9) / 16;
-                    let pipCount = 0;
+                        let drawW, drawH, ox, oy;
 
-                    const drawPip = (source, label, flip = false) => {
-                        const x = canvas.width - sidebarWidth + padding;
-                        const y = padding + pipCount * (pipHeight + padding + 25);
-
-                        if (flip) {
-                            ctx.save();
-                            ctx.translate(x + pipWidth, y);
-                            ctx.scale(-1, 1);
-                            ctx.drawImage(source, 0, 0, pipWidth, pipHeight);
-                            ctx.restore();
+                        // Contain Logic
+                        if (videoAspect > contentAspect) {
+                            drawW = contentWidth;
+                            drawH = contentWidth / videoAspect;
+                            ox = 0;
+                            oy = contentTapY + (contentHeight - drawH) / 2;
                         } else {
-                            ctx.drawImage(source, x, y, pipWidth, pipHeight);
+                            drawH = contentHeight;
+                            drawW = contentHeight * videoAspect;
+                            ox = (contentWidth - drawW) / 2;
+                            oy = contentTapY;
+                        }
+                        ctx.drawImage(activeScreenEl, ox, oy, drawW, drawH);
+
+                        // Draw Participants Row (Top)
+                        const pipCount = 2 + remoteStreamsRef.current.size;
+                        const pipWidth = Math.floor(contentWidth / Math.max(3, pipCount));
+
+                        let currentPipX = 0;
+                        const drawMobilePip = (source, label, flip = false) => {
+                            const pW = pipWidth - 8;
+                            const pH = pipHeight;
+                            const pX = currentPipX + 4;
+                            const pY = 2;
+
+                            const radius = 12;
+
+                            // 1. Draw Shadow & Background (Active Pip Base)
+                            ctx.fillStyle = '#1a1a1a';
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                            ctx.shadowBlur = 8;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 4;
+
+                            ctx.beginPath();
+                            ctx.roundRect(pX, pY, pW, pH, radius);
+                            ctx.fill();
+
+                            // Reset shadow for clipping context
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowBlur = 0;
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 0;
+
+                            // 2. Clip & Draw Video
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.roundRect(pX, pY, pW, pH, radius);
+                            ctx.clip();
+
+                            if (flip) {
+                                ctx.save();
+                                ctx.translate(pX + pW, pY);
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(source, 0, 0, pW, pH);
+                                ctx.restore();
+                            } else {
+                                ctx.drawImage(source, pX, pY, pW, pH);
+                            }
+                            ctx.restore();
+
+                            // 3. Border
+                            ctx.beginPath();
+                            ctx.roundRect(pX, pY, pW, pH, radius);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+
+                            // 4. Minimal Label (No background, just text with outline)
+                            const labelText = formatName(label);
+                            ctx.font = 'bold 8px Inter, sans-serif';
+
+                            // Position at bottom-left (tight corner)
+                            const labelX = pX + 4;
+                            const labelY = pY + pH - 4;
+
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'bottom';
+
+                            // Text Outline for visibility
+                            ctx.lineWidth = 2;
+                            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                            ctx.strokeText(labelText, labelX, labelY);
+
+                            // Text Fill
+                            ctx.fillStyle = '#fff';
+                            ctx.fillText(labelText, labelX, labelY);
+
+                            // MIC ICON
+                            const micIsOn = getMicStatus(label === 'AI' ? 'Ai' : (label === 'You' ? 'You' : 'Guest'), source.srcObject || source); // source for guest is video element, but need stream? 
+                            // Wait, 'source' in drawMobilePip for Guest is the video ELEMENT. videoEl.srcObject is the stream.
+                            // For AI, source is Image. 
+                            // For You, source is videoEl. 
+
+                            // Let's refine passing stream.
+                            // But simplistic:
+                            let isMicOn = true;
+                            if (label === 'You') isMicOn = getMicStatus('You');
+                            else if (label === 'AI') isMicOn = true;
+                            else isMicOn = source.srcObject ? getMicStatus('Guest', source.srcObject) : false; // Guest
+
+                            const labelWidth = ctx.measureText(labelText).width;
+                            drawMicIcon(ctx, labelX + labelWidth + 6, labelY - 9, isMicOn);
+
+                            currentPipX += pipWidth;
+                        };
+
+                        if (userCameraVideo && userCameraVideo.readyState >= 2) drawMobilePip(userCameraVideo, 'You', true);
+                        if (userCameraVideo && userCameraVideo.readyState >= 2) drawMobilePip(userCameraVideo, 'You', true);
+                        if (aiVideo && aiVideo.readyState >= 2) drawMobilePip(aiVideo, 'AI');
+                        else if (aiImg && aiImg.complete) drawMobilePip(aiImg, 'AI');
+                        remoteStreamsRef.current.forEach((_, id) => {
+                            const el = document.getElementById(`remote-video-${id}`);
+                            if (el && el.readyState === 4) drawMobilePip(el, 'Guest');
+                        });
+
+
+                    } else {
+                        // --- DESKTOP STANDARD LAYOUT ---
+                        const sidebarWidth = Math.floor(canvas.width * 0.22);
+                        const contentWidth = canvas.width - sidebarWidth;
+                        const contentHeight = canvas.height;
+
+                        const videoWidth = activeScreenEl.videoWidth || 1280;
+                        const videoHeight = activeScreenEl.videoHeight || 720;
+                        const videoAspect = videoWidth / videoHeight;
+                        const contentAspect = contentWidth / contentHeight;
+
+                        let drawWidth, drawHeight, offsetX, offsetY;
+
+                        if (videoAspect > contentAspect) {
+                            drawWidth = contentWidth;
+                            drawHeight = contentWidth / videoAspect;
+                            offsetX = 0;
+                            offsetY = (contentHeight - drawHeight) / 2;
+                        } else {
+                            drawHeight = contentHeight;
+                            drawWidth = contentHeight * videoAspect;
+                            offsetX = (contentWidth - drawWidth) / 2;
+                            offsetY = 0;
                         }
 
-                        ctx.strokeStyle = '#fff';
-                        ctx.lineWidth = 1.5;
-                        ctx.strokeRect(x, y, pipWidth, pipHeight);
+                        ctx.drawImage(activeScreenEl, offsetX, offsetY, drawWidth, drawHeight);
 
-                        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                        ctx.fillRect(x, y + pipHeight - 18, pipWidth, 18);
-                        ctx.fillStyle = '#fff';
-                        ctx.font = 'bold 10px Arial';
-                        ctx.fillText(label, x + 6, y + pipHeight - 6);
+                        // --- SIDEBAR ---
+                        const padding = 16;
+                        const pipWidth = sidebarWidth - (padding * 2);
+                        const pipHeight = (pipWidth * 9) / 16;
+                        let pipCount = 0;
 
-                        pipCount++;
-                    };
+                        const drawPip = (source, label, flip = false) => {
+                            const x = canvas.width - sidebarWidth + padding;
+                            const y = padding + pipCount * (pipHeight + padding + 25);
 
-                    remoteStreamsRef.current.forEach((_, id) => {
-                        const el = document.getElementById(`remote-video-${id}`);
-                        if (el && el.readyState === 4) {
-                            drawPip(el, `Guest`);
+                            if (flip) {
+                                ctx.save();
+                                ctx.translate(x + pipWidth, y);
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(source, 0, 0, pipWidth, pipHeight);
+                                ctx.restore();
+                            } else {
+                                ctx.drawImage(source, x, y, pipWidth, pipHeight);
+                            }
+
+                            ctx.strokeStyle = '#fff';
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeRect(x, y, pipWidth, pipHeight);
+
+                            // Minimal Label (No background, just text with outline)
+                            ctx.font = 'bold 10px Inter, sans-serif';
+                            const labelX = x + 6;
+                            const labelY = y + pipHeight - 6;
+
+                            ctx.fillStyle = '#fff';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'bottom';
+
+                            ctx.lineWidth = 2.5;
+                            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                            ctx.strokeText(formatName(label), labelX, labelY);
+                            ctx.fillText(formatName(label), labelX, labelY);
+
+                            // Mic Icon Sidebar
+                            let isMicOn = true;
+                            if (label === 'You') isMicOn = getMicStatus('You');
+                            else if (label === 'AI') isMicOn = true;
+                            else isMicOn = source.srcObject ? getMicStatus('Guest', source.srcObject) : false;
+
+                            const nameWidth = ctx.measureText(formatName(label)).width;
+                            drawMicIcon(ctx, labelX + nameWidth + 6, labelY - 9, isMicOn);
+
+                            pipCount++;
+                        };
+
+                        remoteStreamsRef.current.forEach((_, id) => {
+                            const el = document.getElementById(`remote-video-${id}`);
+                            if (el && el.readyState === 4) {
+                                drawPip(el, `Guest`);
+                            }
+                        });
+
+                        if (userCameraVideo && userCameraVideo.readyState >= 2) {
+                            drawPip(userCameraVideo, 'You', true);
                         }
-                    });
 
-                    if (userCameraVideo && userCameraVideo.readyState >= 2) {
-                        drawPip(userCameraVideo, 'You', true);
-                    }
-
-                    if (aiImg && aiImg.complete) {
-                        drawPip(aiImg, 'AI');
+                        if (aiVideo && aiVideo.readyState >= 2) {
+                            drawPip(aiVideo, 'AI');
+                        } else if (aiImg && aiImg.complete) {
+                            drawPip(aiImg, 'AI');
+                        }
                     }
                 }
 
@@ -996,8 +1251,18 @@ export default function MockInterview() {
             else {
                 // STANDARD LAYOUT: Grid of participants
                 const totalParticipants = 2 + remoteStreamsRef.current.size; // AI + Host + Guests
-                const cols = Math.ceil(Math.sqrt(totalParticipants));
-                const rows = Math.ceil(totalParticipants / cols);
+                let cols, rows;
+
+                if (canvas.width > canvas.height) {
+                    // Landscape
+                    cols = Math.ceil(Math.sqrt(totalParticipants));
+                    rows = Math.ceil(totalParticipants / cols);
+                } else {
+                    // Portrait
+                    rows = Math.ceil(Math.sqrt(totalParticipants));
+                    cols = Math.ceil(totalParticipants / rows);
+                }
+
                 const cellWidth = canvas.width / cols;
                 const cellHeight = canvas.height / rows;
 
@@ -1005,8 +1270,9 @@ export default function MockInterview() {
 
 
 
-                // AI
-                if (aiImg && aiImg.complete) {
+                // AI (Video or Image)
+                const aiActive = (aiVideo && aiVideo.readyState >= 2) || (aiImg && aiImg.complete);
+                if (aiActive) {
                     const col = index % cols;
                     const row = Math.floor(index / cols);
                     const x = col * cellWidth;
@@ -1020,16 +1286,56 @@ export default function MockInterview() {
                     const xOffset = x + 10;
                     const yOffset = y + (cellHeight - targetHeight) / 2;
 
-                    ctx.drawImage(aiImg, xOffset, yOffset, targetWidth, targetHeight);
+                    // --- SPEAKING ANIMATION (GLOW/PULSE) ---
+                    const isAiSpeaking = isSpeakingRef.current;
+                    if (isAiSpeaking) {
+                        const pulse = 1 + (Math.sin(Date.now() / 150) * 0.03); // Subtile pulse
+                        const shiftX = (targetWidth * (pulse - 1)) / 2;
+                        const shiftY = (targetHeight * (pulse - 1)) / 2;
 
-                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                    ctx.fillRect(xOffset, yOffset + targetHeight - 30, targetWidth, 30);
+                        // Outer Glow
+                        ctx.shadowColor = '#4ade80'; // Green glow
+                        ctx.shadowBlur = 20;
+
+                        if (aiVideo && aiVideo.readyState >= 2) {
+                            // Play the "talking" video
+                            if (aiVideo.paused) aiVideo.play().catch(() => { });
+                            ctx.drawImage(aiVideo, xOffset - shiftX, yOffset - shiftY, targetWidth * pulse, targetHeight * pulse);
+                        } else {
+                            ctx.drawImage(aiImg, xOffset - shiftX, yOffset - shiftY, targetWidth * pulse, targetHeight * pulse);
+                        }
+                        ctx.shadowBlur = 0; // Reset
+                    } else {
+                        // Resting state (Paused or Image)
+                        if (aiVideo && !aiVideo.paused) aiVideo.pause();
+                        if (aiVideo && aiVideo.readyState >= 2) {
+                            ctx.drawImage(aiVideo, xOffset, yOffset, targetWidth, targetHeight);
+                        } else {
+                            ctx.drawImage(aiImg, xOffset, yOffset, targetWidth, targetHeight);
+                        }
+                    }
+
+                    // Minimal Label (No background, just text with outline)
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    const labelX = xOffset + 10;
+                    const labelY = yOffset + targetHeight - 10;
+
                     ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.fillText('AI Interviewer', xOffset + 10, yOffset + targetHeight - 10);
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+
+                    ctx.lineWidth = 2.5;
+                    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                    ctx.strokeText('AI (Alex)', labelX, labelY);
+
+                    ctx.fillText('AI (Alex)', labelX, labelY);
 
                     // Draw AI Emojis (if any logic triggered them)
                     drawParticipantEmojis('ai', x, y, cellWidth, cellHeight);
+
+                    // AI Mic Icon
+                    const nameWidth = ctx.measureText('AI (Alex)').width;
+                    drawMicIcon(ctx, labelX + nameWidth + 6, labelY - 9, isAiSpeaking);
 
                     index++;
                 }
@@ -1055,12 +1361,22 @@ export default function MockInterview() {
                     ctx.drawImage(userCameraVideo, 0, 0, targetWidth, targetHeight);
                     ctx.restore();
 
-                    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                    ctx.fillRect(xOffset, yOffset + targetHeight - 30, targetWidth, 30);
+                    ctx.font = 'bold 10px Inter, sans-serif';
+                    const hostName = formatName(profile.name || 'Host');
+                    const labelX = xOffset + 10;
+                    const labelY = yOffset + targetHeight - 10;
+
                     ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 20px Arial';
-                    const hostName = profile.name || 'Host';
-                    ctx.fillText(hostName, xOffset + 10, yOffset + targetHeight - 10);
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+
+                    ctx.lineWidth = 2.5;
+                    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                    ctx.strokeText(hostName, labelX, labelY);
+                    ctx.fillText(hostName, labelX, labelY);
+
+                    // Mic Icon
+                    drawMicIcon(ctx, labelX + ctx.measureText(hostName).width + 6, labelY - 9, getMicStatus('You'));
 
                     // Draw HOST Emojis
                     drawParticipantEmojis('host', x, y, cellWidth, cellHeight);
@@ -1087,12 +1403,26 @@ export default function MockInterview() {
 
                         ctx.drawImage(videoEl, xOffset, yOffset, targetWidth, targetHeight);
 
-                        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-                        ctx.fillRect(xOffset, yOffset + targetHeight - 30, targetWidth, 30);
+                        ctx.font = 'bold 10px Inter, sans-serif';
+                        const guestName = formatName(peerNames.get(id) || `Guest`);
+                        const labelX = xOffset + 10;
+                        const labelY = yOffset + targetHeight - 10;
+
                         ctx.fillStyle = '#fff';
-                        ctx.font = 'bold 20px Arial';
-                        const guestName = peerNames.get(id) || `Guest ${id.substring(0, 8)}`;
-                        ctx.fillText(guestName, xOffset + 10, yOffset + targetHeight - 10);
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'bottom';
+
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+                        ctx.strokeText(guestName, labelX, labelY);
+                        ctx.fillText(guestName, labelX, labelY);
+
+                        // Mic Icon
+                        // For Guests in Grid, 'stream' variable available from forEach? No, this is forEach((stream, id)).
+                        // Wait, looking at context in 'view_file' output for Lines 1213: `remoteStreamsRef.current.forEach((stream, id) => {`
+                        // So 'stream' IS the stream object. 'videoEl' is the element.
+                        // I can use `stream` directly.
+                        drawMicIcon(ctx, labelX + ctx.measureText(guestName).width + 6, labelY - 9, getMicStatus('Guest', stream));
 
                         // Draw GUEST Emojis
                         drawParticipantEmojis(id, x, y, cellWidth, cellHeight);
@@ -1306,7 +1636,7 @@ export default function MockInterview() {
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch('/api/question-banks', {
-                    headers: { 'Authorization': `Bearer ${token} ` }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -1426,6 +1756,8 @@ export default function MockInterview() {
     // --- Speech Recognition ---
     const speechTimeoutRef = useRef(null);
 
+    const stableTranscriptRef = useRef(''); // Persistent storage for finalized text
+
     const startListening = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             alert('Speech recognition is not supported.'); return;
@@ -1445,46 +1777,84 @@ export default function MockInterview() {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = 'en-IN';
-        recognition.onstart = () => setIsListening(true);
-        recognition.onend = () => setIsListening(false);
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            stableTranscriptRef.current = currentInput; // Sync with current input box state
+            console.log('🎤 Mic: Listening...');
+        };
+
+        recognition.onerror = (event) => {
+            console.error('🎤 Mic Error:', event.error);
+            if (event.error === 'network') setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+            if (!isManualStopRef.current && !isSpeakingRef.current) {
+                setTimeout(() => {
+                    try { recognitionRef.current?.start(); } catch (e) { }
+                }, 500);
+            }
+        };
 
         recognition.onresult = (event) => {
             if (isSpeakingRef.current) return;
 
-            let finalTranscript = '';
+            let interimTranscript = '';
+            let newFinals = '';
+
             for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    newFinals += transcript + ' ';
+                } else {
+                    interimTranscript += transcript;
+                }
             }
 
-            if (finalTranscript.trim()) {
-                setCurrentInput(prev => {
-                    const newInput = prev + finalTranscript;
-                    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-                    speechTimeoutRef.current = setTimeout(() => {
-                        document.getElementById('auto-send-trigger').click();
-                    }, 4000);
-                    return newInput;
-                });
+            if (newFinals) {
+                stableTranscriptRef.current += newFinals;
+            }
+
+            // Sync input box with [Stable finalized text] + [Current interim chunk]
+            const displayText = (stableTranscriptRef.current + interimTranscript).trim();
+            setCurrentInput(displayText);
+
+            if (newFinals.trim()) {
+                if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+                const wordCount = displayText.split(/\s+/).length;
+                let timeout = wordCount < 6 ? 2000 : 4000;
+
+                speechTimeoutRef.current = setTimeout(() => {
+                    console.log('✅ Auto-sending transcribed text');
+                    document.getElementById('auto-send-trigger').click();
+                }, timeout);
             }
         };
+
         recognitionRef.current = recognition;
-        try { recognition.start(); } catch (e) { console.error(e); }
+        isManualStopRef.current = false;
+        try { recognition.start(); } catch (e) { console.error('Mic Start Failed:', e); }
     };
 
     const stopListening = () => {
         setIsListening(false);
+        isManualStopRef.current = true; // Mark as intentional stop
         // 1. Stop Recognition immediately
         if (recognitionRef.current) {
             recognitionRef.current.abort();
         }
-        // 2. Ensure Hardware Mic is Muted
+        // 2. We NO LONGER mute the mic here. User stays live.
+        /* 
         if (stream) {
             const audioTrack = stream.getAudioTracks()[0];
             if (audioTrack && audioTrack.enabled) {
                 toggleAudio();
             }
-        }
+        } 
+        */
         if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
     };
     const stopSpeaking = () => window.speechSynthesis?.cancel();
@@ -1522,6 +1892,10 @@ export default function MockInterview() {
             utterance.onend = () => {
                 setIsSpeaking(false);
                 isSpeakingRef.current = false;
+                // Resume listening if we were in "auto" mode
+                if (!isManualStopRef.current) {
+                    try { recognitionRef.current?.start(); } catch (e) { }
+                }
             };
             utterance.onerror = (e) => console.error("TTS Error:", e);
 
@@ -1543,7 +1917,14 @@ export default function MockInterview() {
     const startInterview = () => {
         // Use Ref for validation to avoid stale closures in PeerJS callbacks
         const currentProfile = profileRef.current || profile;
-        const displayName = currentProfile.name || (user?.email ? user.email.split('@')[0] : '');
+        let displayName = currentProfile.name;
+
+        if (!displayName && user?.email) {
+            const handle = user.email.split('@')[0];
+            const noNumbers = handle.replace(/[0-9]/g, '');
+            const firstName = noNumbers.split(/[._]/)[0];
+            displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        }
 
         if (!displayName) {
             alert('Please enter your display name.');
@@ -1552,36 +1933,50 @@ export default function MockInterview() {
 
         let questionsToUse = [];
 
-        if (profile.questionBankId) {
-            const selectedBank = userBanks.find(b => b.id === profile.questionBankId);
-            console.log('Selected bank:', selectedBank?.name);
+        if (profile.questionBankIds && profile.questionBankIds.length > 0) {
+            // Log the interview start and increment counts server-side
+            const token = localStorage.getItem('token');
+            fetch('/api/question-banks/log-interview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    bankIds: profile.questionBankIds,
+                    meetingId: meetingId,
+                    candidateName: profile.name,
+                    candidateRole: profile.role,
+                    candidateExperience: profile.experience
+                })
+            }).catch(e => console.error('Logging Error:', e));
 
-            if (selectedBank && selectedBank.questions) {
-                let qList = [];
-
-                // Handle different question formats
-                if (Array.isArray(selectedBank.questions)) {
-                    qList = selectedBank.questions.map(q => {
-                        if (typeof q === 'string') return q;
-                        if (typeof q === 'object') return q.text || q.question || q.questionText || '';
-                        return String(q);
-                    });
-                } else if (typeof selectedBank.questions === 'string') {
-                    // If questions is a JSON string, parse it
-                    try {
-                        const parsed = JSON.parse(selectedBank.questions);
-                        if (Array.isArray(parsed)) {
-                            qList = parsed.map(q => typeof q === 'string' ? q : q.text || q.question || '');
+            profile.questionBankIds.forEach(bankId => {
+                const selectedBank = userBanks.find(b => b.id === bankId);
+                if (selectedBank && selectedBank.questions) {
+                    let qList = [];
+                    // Handle different question formats
+                    if (Array.isArray(selectedBank.questions)) {
+                        qList = selectedBank.questions.map(q => {
+                            if (typeof q === 'string') return q;
+                            if (typeof q === 'object') return q.text || q.question || q.questionText || '';
+                            return String(q);
+                        });
+                    } else if (typeof selectedBank.questions === 'string') {
+                        try {
+                            const parsed = JSON.parse(selectedBank.questions);
+                            if (Array.isArray(parsed)) {
+                                qList = parsed.map(q => typeof q === 'string' ? q : q.text || q.question || '');
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse questions:', e);
                         }
-                    } catch (e) {
-                        console.error('Failed to parse questions:', e);
                     }
+                    questionsToUse = [...questionsToUse, ...qList.filter(q => q && q.trim())];
                 }
-
-                questionsToUse = qList.filter(q => q && q.trim());
-                console.log(`Loaded ${questionsToUse.length} questions from bank: `, questionsToUse.slice(0, 3));
-                setProfile(prev => ({ ...prev, fixedQuestions: questionsToUse }));
-            }
+            });
+            console.log(`Loaded total ${questionsToUse.length} questions from ${profile.questionBankIds.length} banks.`);
+            setProfile(prev => ({ ...prev, fixedQuestions: questionsToUse }));
         }
 
         setStep('interview');
@@ -1597,7 +1992,7 @@ export default function MockInterview() {
 
         const initialMessage = {
             role: 'interviewer',
-            content: `Hello ${displayName}! I'm Sarah. I'm ready to review your screen and code. Shall we start?`,
+            content: `Hello ${displayName}! I'm Alex. I'm ready to review your screen and code. Shall we start?`,
             timestamp: new Date()
         };
 
@@ -1703,8 +2098,18 @@ export default function MockInterview() {
             if (data.audioUrl) {
                 try {
                     const audio = new Audio(data.audioUrl);
+                    setIsSpeaking(true);
+                    isSpeakingRef.current = true;
+
+                    audio.onended = () => {
+                        setIsSpeaking(false);
+                        isSpeakingRef.current = false;
+                        if (!isManualStopRef.current) {
+                            try { recognitionRef.current?.start(); } catch (e) { }
+                        }
+                    };
+
                     audio.play().catch(e => { speakMessage(data.response); });
-                    audio.onerror = (e) => { speakMessage(data.response); };
                 } catch (e) { speakMessage(data.response); }
             } else { speakMessage(data.response); }
 
@@ -1799,25 +2204,26 @@ export default function MockInterview() {
     return (
         <>
 
-            <div className="relative h-[calc(100vh-4rem)] bg-black overflow-hidden flex flex-col">
+            <div className="relative h-[calc(100svh-5rem)] bg-black overflow-hidden flex flex-col border-b border-gray-800">
                 {/* Persistent Hidden Video Sources */}
                 <video ref={cameraVideoRef} autoPlay muted playsInline style={{ display: 'none' }} />
                 <video ref={incomingScreenVideoRef} autoPlay muted playsInline style={{ display: 'none' }} id="incoming-screen-share" />
-                <img ref={aiImageRef} src="/interviewer_zoom.png" alt="Interviewer" style={{ display: 'none' }} />
+                <video ref={aiVideoRef} src="https://assets.mixkit.co/videos/preview/mixkit-man-on-a-video-call-nodding-and-talking-41740-large.mp4" loop muted playsInline style={{ display: 'none' }} id="ai-video-feed" />
+                <img ref={aiImageRef} src="/assets/interview/alex.png?v=99" alt="Interviewer" crossOrigin="anonymous" style={{ display: 'none' }} />
 
                 {/* SETUP SCREEN */}
                 {step === 'setup' && (
-                    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-                        <div className="bg-gray-800 p-8 rounded-xl max-w-md w-full border border-gray-700 shadow-2xl">
-                            <h1 className="text-2xl font-bold mb-6 text-center text-white">
+                    <div className="min-h-[calc(100svh-4rem)] bg-gray-900 flex items-center justify-center p-4">
+                        <div className="bg-gray-800 p-6 rounded-xl max-w-md w-full border border-gray-700 shadow-2xl overflow-y-auto max-h-[85vh] invisible-scrollbar">
+                            <h1 className="text-xl font-bold mb-6 text-center text-white">
                                 {meetingId ? 'Enter Meeting' : 'New Meeting'}
                             </h1>
 
 
                             {/* Setup Form & Sidebar Content */}
                             {meetingId && !isHost && (
-                                <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                    <p className="text-blue-300 text-sm">✓ Joining meeting as observer</p>
+                                <div className="mb-4 p-3 bg-blue-600/10 border border-blue-600/30 rounded-lg">
+                                    <p className="text-blue-400 text-sm">✓ Joining meeting as observer</p>
                                 </div>
                             )}
 
@@ -1829,26 +2235,103 @@ export default function MockInterview() {
                                 </div>
 
                                 {isHost && (
-                                    <div className="space-y-2">
-                                        <label className="block text-xs uppercase text-gray-400 font-bold">Select Question Feed</label>
-                                        <div className="relative">
-                                            <select
-                                                value={profile.questionBankId || ''}
-                                                onChange={(e) => setProfile(prev => ({ ...prev, questionBankId: e.target.value }))}
-                                                className="w-full bg-gray-900 border border-gray-700 text-white p-3 rounded appearance-none focus:border-blue-500 focus:outline-none"
-                                            >
-                                                <option value="">-- No specific feed (General Interview) --</option>
-                                                {userBanks.map(bank => (
-                                                    <option key={bank.id} value={bank.id}>
-                                                        {bank.name || bank.title} ({JSON.parse(bank.questions || '[]').length} Qs)
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                            </div>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <label className="block text-[10px] uppercase text-gray-500 font-bold tracking-wider">Select Question Feeds</label>
+                                            <span className="text-[10px] text-blue-400 font-bold">{profile.questionBankIds.length} Selected</span>
                                         </div>
-                                        <p className="text-xs text-gray-500">AI will ask questions from this selected bank.</p>
+
+                                        {/* Search Bar */}
+                                        <div className="relative group">
+                                            <input
+                                                type="text"
+                                                placeholder="Search feeds..."
+                                                value={feedSearch}
+                                                onChange={(e) => setFeedSearch(e.target.value)}
+                                                className="w-full bg-gray-900 border border-gray-700 text-white pl-8 pr-3 py-1.5 text-[11px] rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                                            />
+                                            <svg className="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-500 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </div>
+
+                                        <div className="flex gap-3 overflow-x-auto pb-4 scroll-smooth invisible-scrollbar -mx-1 px-1">
+                                            {(() => {
+                                                const filteredBanks = userBanks.filter(b =>
+                                                    b.name.toLowerCase().includes(feedSearch.toLowerCase()) ||
+                                                    (b.user?.email || '').toLowerCase().includes(feedSearch.toLowerCase())
+                                                );
+
+                                                const sortedBanks = [...filteredBanks].sort((a, b) => {
+                                                    const aIsMine = a.user?.email === profile.email;
+                                                    const bIsMine = b.user?.email === profile.email;
+                                                    if (aIsMine && !bIsMine) return -1;
+                                                    if (!aIsMine && bIsMine) return 1;
+                                                    return (b.usageCount || 0) - (a.usageCount || 0);
+                                                });
+
+                                                if (sortedBanks.length === 0) return (
+                                                    <div className="flex-none w-full py-8 text-center bg-gray-900/30 rounded-xl border border-dashed border-gray-700">
+                                                        <p className="text-xs text-gray-500 italic">No feeds match your search</p>
+                                                    </div>
+                                                );
+
+                                                return sortedBanks.map(bank => {
+                                                    const isSelected = profile.questionBankIds.includes(bank.id);
+                                                    const isOwner = bank.user?.email === profile.email;
+                                                    const actualCount = bank.usageCount || 0;
+                                                    const displayCount = actualCount > 0 ? (actualCount * 1.5).toFixed(1) + 'k' : '';
+
+                                                    const qCount = (() => {
+                                                        try {
+                                                            return Array.isArray(bank.questions) ? bank.questions.length : JSON.parse(bank.questions || '[]').length;
+                                                        } catch (e) { return 0; }
+                                                    })();
+
+                                                    return (
+                                                        <div
+                                                            key={bank.id}
+                                                            onClick={() => {
+                                                                const newIds = isSelected ? profile.questionBankIds.filter(id => id !== bank.id) : [...profile.questionBankIds, bank.id];
+                                                                setProfile(prev => ({ ...prev, questionBankIds: newIds }));
+                                                            }}
+                                                            className={`flex-none w-40 p-3 rounded-xl border transition-all cursor-pointer relative group overflow-hidden ${isSelected ? 'bg-blue-600/10 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.2)]' : 'bg-gray-800/50 border-gray-700 hover:border-gray-500'}`}
+                                                        >
+                                                            {/* Usage Count Badge */}
+                                                            {displayCount && (
+                                                                <div className="absolute top-2 right-2 bg-gray-900/80 backdrop-blur-sm text-[8px] text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded-full font-bold group-hover:scale-110 transition-transform">
+                                                                    📈 {displayCount}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="mb-2">
+                                                                <span className="text-lg">{bank.isPublic ? '🌐' : '🔒'}</span>
+                                                                {isOwner && <span className="ml-1.5 text-[8px] bg-blue-600 text-white px-1 py-0.5 rounded-md font-bold uppercase tracking-tight">Mine</span>}
+                                                            </div>
+
+                                                            <div className={`text-[11px] font-bold mb-1 truncate ${isSelected ? 'text-white' : 'text-gray-200'}`}>
+                                                                {bank.name}
+                                                            </div>
+
+                                                            <div className="text-[9px] text-gray-500 truncate mb-1.5">
+                                                                {(bank.isAnonymous || bank.anonymous) && !isOwner ? 'Anonymous' : (bank.user?.email || 'System')}
+                                                            </div>
+
+                                                            <div className="text-[10px] text-blue-400/80 font-bold border-t border-gray-700/50 pt-2 flex justify-between">
+                                                                <span>Q-Bank</span>
+                                                                <span>{qCount} Questions</span>
+                                                            </div>
+
+                                                            {/* Selected Indicator */}
+                                                            {isSelected && (
+                                                                <div className="absolute inset-x-0 bottom-0 h-1 bg-blue-500 shadow-[0_0_10px_#2563eb]"></div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 italic text-center">Swipe left/right to browse. Ordered by usage & ownership.</p>
                                     </div>
                                 )}
 
@@ -1863,7 +2346,7 @@ export default function MockInterview() {
                                                     const context = formatResumeToContext(rId);
                                                     setProfile(prev => ({ ...prev, selectedResumeId: rId, resumeContext: context }));
                                                 }}
-                                                className="w-full bg-gray-900 border border-gray-700 text-white p-3 rounded appearance-none focus:border-blue-500 focus:outline-none"
+                                                className="w-full bg-gray-900 border border-gray-700 text-white p-2 text-sm rounded appearance-none focus:border-blue-600 focus:outline-none"
                                             >
                                                 <option value="">-- No specific resume --</option>
                                                 {userResumes.map(resume => (
@@ -1876,7 +2359,7 @@ export default function MockInterview() {
                                                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                                             </div>
                                         </div>
-                                        <p className="text-xs text-gray-500">AI will customize questions based on this resume.</p>
+                                        <p className="text-[10px] text-gray-500">AI will customize questions based on this resume.</p>
 
                                         <div className="mt-2 text-center">
                                             <p className="text-xs text-gray-400 mb-1">- OR -</p>
@@ -1890,7 +2373,7 @@ export default function MockInterview() {
                                             />
                                             <label
                                                 htmlFor="resume-upload"
-                                                className={`inline-block w-full py-2 px-4 rounded border border-dashed border-gray-600 text-sm font-medium cursor-pointer transition-colors ${uploadingResume ? 'bg-gray-800 text-gray-500 cursor-wait' : 'bg-gray-800 text-blue-400 hover:bg-gray-700 hover:border-blue-500 hover:text-blue-300'}`}
+                                                className={`inline-block w-full py-2 px-4 rounded border border-dashed border-gray-600 text-sm font-medium cursor-pointer transition-colors ${uploadingResume ? 'bg-gray-800 text-gray-500 cursor-wait' : 'bg-gray-800 text-blue-600 hover:bg-gray-700 hover:border-blue-500 hover:text-blue-400'}`}
                                             >
                                                 {uploadingResume ? 'Scanning & Uploading...' : 'Upload New Resume (PDF/DOCX)'}
                                             </label>
@@ -1900,7 +2383,7 @@ export default function MockInterview() {
 
                                 <button
                                     onClick={startInterview}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition-colors shadow-lg shadow-blue-500/30"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition-colors shadow-lg shadow-blue-600/30"
                                 >
                                     {isHost ? (meetingId ? 'Join Meeting' : 'Start New Interview') : 'Join Meeting'}
                                 </button>
@@ -1943,21 +2426,85 @@ export default function MockInterview() {
                                     <span className={`w-1 h-1 rounded-full ${isRecording ? '' : 'bg-white animate-ping'} `}></span>
                                 </span>
                                 <span className="font-semibold text-sm tracking-wide">
-                                    DecisiveML Meeting - Technical Interview {isRecording && <span className="text-red-400 text-xs ml-2">• REC</span>}
+                                    {/* Mobile: No Title. Desktop: Full Title */}
+                                    <div className="flex flex-col hidden md:flex">
+                                        <h1 className="text-sm md:text-lg font-bold text-white tracking-tight">DecisiveML Meeting</h1>
+                                        <div className="flex items-center gap-2 text-[10px] md:text-xs text-green-400 font-mono">
+                                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                                            SECURE CONNECTION
+                                        </div>
+                                    </div>
                                 </span>
                             </div>
 
-                            {/* RESTART BUTTON (Recovery) */}
-                            <button
-                                onClick={() => {
-                                    if (confirm("Restart the connection? You will rejoin immediately.")) {
-                                        window.location.reload();
-                                    }
-                                }}
-                                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs px-3 py-1.5 rounded border border-red-500/30 transition-colors"
-                            >
-                                ↻ Restart
-                            </button>
+                            {/* TOP CONTROLS: Utilities (Record, Chat, Invite, End) */}
+                            <div className="flex items-center gap-2 md:gap-3">
+                                {/* Record */}
+                                <button
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    className={`p-2 rounded-full transition-all border ${isRecording ? 'bg-red-500/20 text-red-500 border-red-500/50' : 'bg-transparent text-gray-400 border-transparent hover:bg-gray-800'}`}
+                                    title={isRecording ? "Stop Recording" : "Start Recording"}
+                                >
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        {isRecording ? <rect x="6" y="6" width="8" height="8" rx="1" /> : <circle cx="10" cy="10" r="5" />}
+                                    </svg>
+                                </button>
+
+                                {/* Chat */}
+                                <button
+                                    onClick={() => setShowChat(!showChat)}
+                                    className={`p-2 rounded-full transition-all border ${showChat ? 'bg-blue-500/20 text-blue-500 border-blue-500/50' : 'bg-transparent text-gray-400 border-transparent hover:bg-gray-800'}`}
+                                    title="Open Chat"
+                                >
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+
+                                {/* Invite */}
+                                <button
+                                    onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Meeting link copied to clipboard!'); }}
+                                    className="p-2 rounded-full bg-transparent text-gray-400 hover:bg-gray-800 hover:text-white transition-all"
+                                    title="Copy Link"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                    </svg>
+                                </button>
+
+                                {/* Reactions (Mobile: simple toggle) */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowReactions(!showReactions)}
+                                        className={`p-2 rounded-full transition-all border ${showReactions ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' : 'bg-transparent text-gray-400 border-transparent hover:bg-gray-800'}`}
+                                        title="Reactions"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </button>
+
+                                    {/* Reaction Menu */}
+                                    {showReactions && (
+                                        <div className="absolute top-full right-0 mt-2 bg-[#2a2a2a] rounded-full px-3 py-2 flex gap-2 shadow-xl border border-gray-700 z-50 animate-in fade-in zoom-in duration-200">
+                                            <button onClick={() => { setIsHandRaised(prev => !prev); flyEmoji('✋'); setShowReactions(false); }} className="hover:bg-gray-600 p-1 rounded-full transition-colors text-lg" title="Raise Hand">✋</button>
+                                            <button onClick={() => { flyEmoji('👍'); setShowReactions(false); }} className="hover:scale-125 transition-transform text-lg">👍</button>
+                                            <button onClick={() => { flyEmoji('👏'); setShowReactions(false); }} className="hover:scale-125 transition-transform text-lg">👏</button>
+                                            <button onClick={() => { flyEmoji('❤️'); setShowReactions(false); }} className="hover:scale-125 transition-transform text-lg">❤️</button>
+                                            <button onClick={() => { flyEmoji('😂'); setShowReactions(false); }} className="hover:scale-125 transition-transform text-lg">😂</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* END CALL BUTTON */}
+                                <button
+                                    onClick={endInterview}
+                                    className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-lg border border-red-500 active:scale-95 transition-all flex items-center gap-2"
+                                >
+                                    <span className="hidden md:inline">End Meeting</span>
+                                    <span className="md:hidden">End</span>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Main Grid Area - unified display */}
@@ -2079,7 +2626,7 @@ export default function MockInterview() {
                         {/* Chat Panel */}
                         {
                             showChat && (
-                                <div className="absolute top-2 bottom-2 right-2 w-80 bg-[#1c1c1e] rounded-lg border border-gray-700 flex flex-col shadow-2xl z-30">
+                                <div className="absolute top-16 bottom-24 right-2 w-80 bg-[#1c1c1e] rounded-lg border border-gray-700 flex flex-col shadow-2xl z-30">
                                     <div className="p-3 border-b border-gray-700 flex justify-between items-center bg-[#242424] rounded-t-lg shrink-0">
                                         <h3 className="text-sm font-bold text-white">Meeting Chat</h3>
                                         <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-white font-bold">✕</button>
@@ -2088,7 +2635,7 @@ export default function MockInterview() {
                                         {messages.map((msg, i) => (
                                             <div key={i} className={`flex flex-col ${msg.role === 'candidate' ? 'items-end' : 'items-start'}`}>
                                                 <span className="text-[10px] text-gray-500 mb-1 px-1">
-                                                    {msg.role === 'candidate' ? (profile.name || 'You') : 'Sarah'}
+                                                    {msg.role === 'candidate' ? (profile.name || 'You') : 'Alex'}
                                                 </span>
                                                 <div className={`max-w-[85%] rounded-xl p-2 text-xs ${msg.role === 'candidate' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}`}>
                                                     {msg.content}
@@ -2115,7 +2662,7 @@ export default function MockInterview() {
 
                         {/* Bottom Controls */}
                         {/* Bottom Controls */}
-                        <div className="h-20 bg-[#1c1c1e] flex items-center justify-center gap-6 shrink-0 border-t border-gray-800 px-4">
+                        <div className="h-16 md:h-20 bg-[#1c1c1e] flex items-center justify-around md:justify-center gap-1 md:gap-6 shrink-0 border-t border-gray-800 px-2 md:px-4 z-50 overflow-x-auto no-scrollbar">
                             {/* Audio Toggle */}
                             {/* Audio Toggle with Volume Viz */}
                             <div className="relative">
@@ -2127,10 +2674,10 @@ export default function MockInterview() {
                                 )}
                                 <button
                                     onClick={isListening ? stopListening : startListening}
-                                    className="flex flex-col items-center gap-1 group min-w-[64px]"
+                                    className="flex flex-col items-center gap-1 group min-w-[44px] md:min-w-[64px]"
                                 >
                                     <div
-                                        className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-100 border border-transparent shadow-sm relative overflow-visible ${isListening ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500/20 hover:bg-red-500/30'}`}
+                                        className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-all duration-100 border border-transparent shadow-sm relative overflow-visible ${isListening ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500/20 hover:bg-red-500/30'}`}
                                         style={isListening && userVolume > 5 ? {
                                             boxShadow: `0 0 0 ${Math.min(userVolume / 5, 6)}px rgba(59, 130, 246, 0.5)`
                                         } : {}}
@@ -2140,7 +2687,7 @@ export default function MockInterview() {
                                             <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-pulse" style={{ transform: `scale(${1 + userVolume / 100})` }}></div>
                                         )}
 
-                                        <svg className={`w-4 h-4 relative z-10 ${isListening ? 'text-white' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
+                                        <svg className={`w-3.5 h-3.5 md:w-4 md:h-4 relative z-10 ${isListening ? 'text-white' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
                                             {isListening ? (
                                                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6z" />
                                             ) : (
@@ -2148,16 +2695,16 @@ export default function MockInterview() {
                                             )}
                                         </svg>
                                     </div>
-                                    <span className={`text-[9px] font-bold uppercase tracking-tighter ${showMuteWarning ? 'text-red-500 animate-pulse' : 'text-gray-500 group-hover:text-gray-300'}`}>
+                                    <span className={`text-[8px] md:text-[9px] font-bold uppercase tracking-tighter ${showMuteWarning ? 'text-red-500 animate-pulse' : 'text-gray-500 group-hover:text-gray-300'}`}>
                                         {showMuteWarning ? 'MUTED!' : (isListening ? 'Mute' : 'Unmute')}
                                     </span>
                                 </button>
                             </div>
 
                             {/* Video Toggle */}
-                            <button onClick={handleToggleVideo} className="flex flex-col items-center gap-1 group min-w-[64px]">
-                                <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${isVideoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500/20 hover:bg-red-500/30'} border border-transparent shadow-sm`}>
-                                    <svg className={`w-4 h-4 ${isVideoEnabled ? 'text-white' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <button onClick={handleToggleVideo} className="flex flex-col items-center gap-1 group min-w-[44px] md:min-w-[64px]">
+                                <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-all duration-200 ${isVideoEnabled ? 'bg-gray-700 hover:bg-gray-600' : 'bg-red-500/20 hover:bg-red-500/30'} border border-transparent shadow-sm`}>
+                                    <svg className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isVideoEnabled ? 'text-white' : 'text-red-500'}`} fill="currentColor" viewBox="0 0 20 20">
                                         {isVideoEnabled ? (
                                             <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                                         ) : (
@@ -2165,93 +2712,26 @@ export default function MockInterview() {
                                         )}
                                     </svg>
                                 </div>
-                                <span className="text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">Video</span>
+                                <span className="text-[8px] md:text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">Video</span>
                             </button>
 
                             {/* Screen Share */}
-                            <button onClick={isScreenSharing ? stopScreenShare : startScreenShare} className="flex flex-col items-center gap-1 group min-w-[64px]">
-                                <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${isScreenSharing ? 'bg-green-600/20 hover:bg-green-600/30 border-green-500/30' : 'bg-gray-700 hover:bg-gray-600'} border border-transparent shadow-sm`}>
-                                    <svg className={`w-4 h-4 ${isScreenSharing ? 'text-green-500' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <button onClick={isScreenSharing ? stopScreenShare : startScreenShare} className="flex flex-col items-center gap-1 group min-w-[44px] md:min-w-[64px]">
+                                <div className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-all duration-200 ${isScreenSharing ? 'bg-green-600/20 hover:bg-green-600/30 border-green-500/30' : 'bg-gray-700 hover:bg-gray-600'} border border-transparent shadow-sm`}>
+                                    <svg className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isScreenSharing ? 'text-green-500' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clipRule="evenodd" />
                                     </svg>
                                 </div>
-                                <span className="text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">{isScreenSharing ? 'Stop' : 'Share'}</span>
+                                <span className="text-[8px] md:text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">{isScreenSharing ? 'Stop' : 'Share'}</span>
                             </button>
 
-                            {isScreenSharing && (
-                                <button
-                                    onClick={() => setIsScreenFullscreen(p => !p)}
-                                    rem={0}
-                                    className="flex flex-col items-center gap-1 group min-w-[64px]"
-                                >
-                                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600">
-                                        {isScreenFullscreen ? '🗗' : '🗖'}
-                                    </div>
-
-                                </button>
-                            )}
 
 
-                            <div className="h-8 w-px bg-gray-700 mx-2"></div>
 
-                            {/* Reactions */}
-                            <div className="relative group">
-                                <button className="flex flex-col items-center gap-1 min-w-[64px]">
-                                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-sm text-lg">
-                                        ☺
-                                    </div>
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">React</span>
-                                </button>
-                                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-[#2a2a2a] rounded-full px-4 py-1.5 flex gap-3 shadow-xl invisible group-hover:visible transition-all opacity-0 group-hover:opacity-100 whitespace-nowrap border border-gray-700 z-50">
-                                    <button onClick={() => { setIsHandRaised(prev => !prev); flyEmoji('✋'); }} className="hover:bg-gray-600 p-1.5 rounded-full transition-colors" title="Raise Hand">✋</button>
-                                    <button onClick={() => flyEmoji('👍')} className="hover:scale-125 transition-transform text-lg">👍</button>
-                                    <button onClick={() => flyEmoji('👏')} className="hover:scale-125 transition-transform text-lg">👏</button>
-                                    <button onClick={() => flyEmoji('❤️')} className="hover:scale-125 transition-transform text-lg">❤️</button>
-                                    <button onClick={() => flyEmoji('😂')} className="hover:scale-125 transition-transform text-lg">😂</button>
-                                </div>
-                            </div>
 
-                            {/* Invite */}
-                            <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert('Meeting link copied to clipboard!'); }} className="flex flex-col items-center gap-1 group min-w-[64px]">
-                                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 transition-all shadow-sm">
-                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                    </svg>
-                                </div>
-                                <span className="text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">Invite</span>
-                            </button>
 
-                            {/* Chat */}
-                            <button onClick={() => setShowChat(!showChat)} className="flex flex-col items-center gap-1 group min-w-[64px]">
-                                <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${showChat ? 'bg-blue-600/20 hover:bg-blue-600/30' : 'bg-gray-700 hover:bg-gray-600'} border border-transparent shadow-sm`}>
-                                    <svg className={`w-4 h-4 ${showChat ? 'text-blue-500' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <span className="text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">Chat</span>
-                            </button>
 
-                            {/* Record */}
-                            <button onClick={isRecording ? stopRecording : startRecording} className="flex flex-col items-center gap-1 group min-w-[64px]">
-                                <div className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${isRecording ? 'bg-red-500/20 hover:bg-red-500/30 animate-pulse' : 'bg-gray-700 hover:bg-gray-600'} border border-transparent shadow-sm`}>
-                                    <svg className={`w-4 h-4 ${isRecording ? 'text-red-500' : 'text-white'}`} fill="currentColor" viewBox="0 0 20 20">
-                                        {isRecording ? <rect x="6" y="6" width="8" height="8" rx="1" /> : <circle cx="10" cy="10" r="5" />}
-                                    </svg>
-                                </div>
-                                <span className="text-[9px] font-bold text-gray-500 group-hover:text-gray-300 uppercase tracking-tighter">Record</span>
-                            </button>
-
-                            <div className="h-8 w-px bg-gray-700 mx-2"></div>
-
-                            {/* End Call */}
-                            <button onClick={endInterview} className="flex flex-col items-center gap-1 group ml-2 min-w-[70px]">
-                                <div className="w-14 h-10 flex items-center justify-center rounded-xl bg-red-600 hover:bg-red-700 transition-all shadow-md active:scale-95 border border-red-500">
-                                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" transform="rotate(135 10 10)" />
-                                    </svg>
-                                </div>
-                                <span className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-0.5">End</span>
-                            </button>
+                            {/* End Call Moved to Top Header */}
                         </div>
 
                         {/* Feedback Overlay */}

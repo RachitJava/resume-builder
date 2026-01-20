@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/question-banks")
@@ -80,6 +81,8 @@ public class QuestionBankController {
             @RequestParam("name") String name,
             @RequestParam("category") String category,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "isPublic", required = false) Boolean isPublic,
+            @RequestParam(value = "isAnonymous", required = false) Boolean isAnonymous,
             @RequestHeader("Authorization") String authHeader) {
         User user = authService.validateToken(authHeader.substring(7));
         if (user == null) {
@@ -87,7 +90,8 @@ public class QuestionBankController {
         }
 
         try {
-            QuestionBank bank = questionBankService.createFromFile(file, name, category, description, user);
+            QuestionBank bank = questionBankService.createFromFile(file, name, category, description, isPublic,
+                    isAnonymous, user);
             return ResponseEntity.ok(bank);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
@@ -127,5 +131,50 @@ public class QuestionBankController {
         }
 
         return ResponseEntity.ok(Map.of("message", "Question bank deleted successfully"));
+    }
+
+    @PostMapping("/{id}/increment-usage")
+    public ResponseEntity<?> incrementUsage(@PathVariable String id) {
+        // No auth required for incrementing usage during interview
+        questionBankService.incrementUsage(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/log-interview")
+    public ResponseEntity<?> logInterview(@RequestBody Map<String, Object> request,
+            @RequestHeader("Authorization") String authHeader) {
+        User user = authService.validateToken(authHeader.substring(7));
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        Object bankIdsObj = request.get("bankIds");
+        List<String> bankIds = new ArrayList<>();
+        if (bankIdsObj instanceof List<?>) {
+            for (Object item : (List<?>) bankIdsObj) {
+                if (item instanceof String) {
+                    bankIds.add((String) item);
+                }
+            }
+        }
+
+        String meetingId = (String) request.get("meetingId");
+        String candidateName = (String) request.get("candidateName");
+        String candidateRole = (String) request.get("candidateRole");
+        String candidateExperience = (String) request.get("candidateExperience");
+
+        questionBankService.logInterviewStart(user, bankIds, meetingId, candidateName, candidateRole,
+                candidateExperience);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<?> getInterviewHistory(@RequestHeader("Authorization") String authHeader) {
+        User user = authService.validateToken(authHeader.substring(7));
+        if (user == null || !user.isAdmin()) {
+            return ResponseEntity.status(403).body(Map.of("error", "Forbidden"));
+        }
+
+        return ResponseEntity.ok(questionBankService.getAllInterviewRecords());
     }
 }

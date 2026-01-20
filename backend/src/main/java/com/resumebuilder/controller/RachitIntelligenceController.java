@@ -200,6 +200,7 @@ public class RachitIntelligenceController {
             result.put("message", "Successfully synced category: " + category);
             result.put("syncedBanks", categoryBanks.size());
             result.put("timestamp", LocalDateTime.now());
+            result.put("apiResponse", response.getBody());
 
             return ResponseEntity.ok(result);
 

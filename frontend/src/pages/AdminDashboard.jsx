@@ -8,9 +8,10 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('rachit-intelligence');
+  const [activeTab, setActiveTab] = useState('meetings');
 
   const [aiConfigs, setAiConfigs] = useState([]);
+  const [interviewHistory, setInterviewHistory] = useState([]);
   const [showAddConfigForm, setShowAddConfigForm] = useState(false);
   const [newConfig, setNewConfig] = useState({ providerName: 'groq', apiUrl: '', modelName: '' });
 
@@ -49,7 +50,8 @@ export default function AdminDashboard() {
           loadAiConfigs(),
           loadGeneralApiKeys(),
           loadUsers(),
-          loadTemplates()
+          loadTemplates(),
+          loadInterviewHistory()
         ]);
       } catch (partialError) {
         console.warn('Dashboard data partial load', partialError);
@@ -68,6 +70,20 @@ export default function AdminDashboard() {
       setAiConfigs(configs);
     } catch (err) {
       console.error('Failed to load AI configs:', err);
+    }
+  };
+
+  const loadInterviewHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/question-banks/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setInterviewHistory(await response.json());
+      }
+    } catch (err) {
+      console.error('Failed to load history:', err);
     }
   };
 
@@ -298,15 +314,15 @@ export default function AdminDashboard() {
         )}
 
         <div className="flex gap-2 overflow-x-auto invisible-scrollbar mb-8 border-b border-gray-200 dark:border-gray-800 whitespace-nowrap min-w-full">
-          <button
+          {/* <button
             onClick={() => setActiveTab('rachit-intelligence')}
             className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'rachit-intelligence'
-              ? 'border-purple-600 dark:border-purple-400 text-purple-600 dark:text-purple-400'
+              ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
           >
             🧠 Rachit Intelligence™
-          </button>
+          </button> */}
           <button
             onClick={() => setActiveTab('api-keys')}
             className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'api-keys'
@@ -334,17 +350,109 @@ export default function AdminDashboard() {
           >
             🎨 Templates
           </button>
+          <button
+            onClick={() => setActiveTab('meetings')}
+            className={`px-4 md:px-6 py-3 font-medium border-b-2 transition-colors ${activeTab === 'meetings'
+              ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+          >
+            🎤 Manage Meetings
+          </button>
         </div>
 
         {/* Tab Content */}
-        {
+        {/* {
           activeTab === 'rachit-intelligence' && (
             <RachitIntelligenceDashboard
               users={users}
               templates={templates}
             />
           )
-        }
+        } */}
+
+        {activeTab === 'meetings' && (
+          <div className="space-y-6 animate-fadeIn p-6 bg-gray-50 dark:bg-black/20 rounded-2xl">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold">Interview History</h2>
+                <p className="text-sm text-gray-500">Live monitoring of AI interview sessions and feed popularity.</p>
+              </div>
+              <button
+                onClick={loadInterviewHistory}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-lg shadow-blue-600/20"
+              >
+                🔄 Refresh Logs
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-500/20">
+                <p className="text-[10px] uppercase font-black tracking-widest opacity-80 mb-1">Visual Project Impact</p>
+                <p className="text-4xl font-black">{(interviewHistory.length * 1.5).toFixed(1)}k</p>
+                <p className="text-[10px] mt-2 font-medium bg-white/10 inline-block px-2 py-1 rounded">Projected users reached since launch</p>
+              </div>
+              <div className="bg-white dark:bg-[#18181B] border border-gray-100 dark:border-gray-800 p-6 rounded-2xl shadow-sm">
+                <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-1">Sessions Tracked</p>
+                <p className="text-4xl font-black text-white">{interviewHistory.length}</p>
+                <p className="text-[10px] mt-2 font-medium text-gray-500">Actual 1:1 meetings logged</p>
+              </div>
+              <div className="bg-white dark:bg-[#18181B] border border-gray-100 dark:border-gray-800 p-6 rounded-2xl shadow-sm">
+                <p className="text-[10px] uppercase font-black tracking-widest text-blue-500 mb-1">Meetings Today</p>
+                <p className="text-4xl font-black text-white">
+                  {interviewHistory.filter(h => new Date(h.timestamp).toDateString() === new Date().toDateString()).length}
+                </p>
+                <p className="text-[10px] mt-2 font-medium text-gray-500">Sessions conducted in last 24h</p>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#18181B] border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+                    <tr>
+                      <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-[10px]">Candidate</th>
+                      <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-[10px]">Feeds Used</th>
+                      <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-[10px]">Timestamp</th>
+                      <th className="px-6 py-4 font-bold text-gray-500 uppercase tracking-tighter text-[10px]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-800/50">
+                    {interviewHistory.length === 0 && (
+                      <tr><td colSpan="4" className="px-6 py-12 text-center text-gray-400 italic">No meetings have been logged yet.</td></tr>
+                    )}
+                    {interviewHistory.map(record => (
+                      <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-gray-900 dark:text-gray-100">{record.candidateName || 'Unnamed Candidate'}</div>
+                          <div className="text-[10px] text-blue-500 font-bold uppercase tracking-tight">
+                            {record.candidateRole || 'General Role'} • {record.candidateExperience || '0'}yr
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-1">{record.user?.email}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {record.questionBankIds?.split(',').map(id => (
+                              <span key={id} className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                Feed_{id.slice(0, 4)}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-500">
+                          {new Date(record.timestamp).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400 text-[9px] px-2 py-1 rounded font-black uppercase tracking-widest">Completed</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {
           activeTab === 'api-keys' && (
@@ -518,7 +626,7 @@ function ApiKeysSection({ aiConfigs, onAddKey, onActivate, onDelete, onAddConfig
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-3">
                     {config.providerName.toUpperCase()}
-                    <span className="text-[10px] bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full uppercase tracking-tighter">{config.type || 'RESUME'}</span>
+                    <span className="text-[10px] bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full uppercase tracking-tighter">{config.type || 'RESUME'}</span>
                     {config.active && <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">Current Provider</span>}
                   </h3>
                   <div className="flex flex-col mt-2 gap-1">
@@ -675,7 +783,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                   onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
                   className="sr-only"
                 />
-                <div className={`w-11 h-6 rounded-full transition-colors ${formData.isAdmin ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-700'}`}></div>
+                <div className={`w-11 h-6 rounded-full transition-colors ${formData.isAdmin ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-700'}`}></div>
                 <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.isAdmin ? 'translate-x-5' : 'translate-x-0'}`}></div>
               </div>
               <div className="flex flex-col">
@@ -736,11 +844,11 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                           onUpdateUser(user.id, { isAdmin: !user.isAdmin });
                         }}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${user.isAdmin
-                          ? 'bg-purple-500/10 text-purple-600 border-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
+                          ? 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400 dark:border-blue-500/30'
                           : 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
                           }`}
                       >
-                        <div className={`w-1.5 h-1.5 rounded-full ${user.isAdmin ? 'bg-purple-500 animate-pulse' : 'bg-gray-400'}`}></div>
+                        <div className={`w-1.5 h-1.5 rounded-full ${user.isAdmin ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></div>
                         {user.isAdmin ? 'Revoke Admin' : 'Grant Admin'}
                       </button>
                     </td>
@@ -789,7 +897,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                     <p className="text-[10px] text-gray-500 mt-0.5">Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${user.isAdmin
-                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                     : 'bg-gray-500/10 text-gray-600 dark:text-gray-400'
                     }`}>
                     {user.isAdmin ? 'Admin' : 'User'}
@@ -802,7 +910,7 @@ function UsersSection({ users, showAddForm, setShowAddForm, editingUser, setEdit
                       onUpdateUser(user.id, { isAdmin: !user.isAdmin });
                     }}
                     className={`flex-1 py-2 rounded text-[10px] font-bold uppercase border transition-all ${user.isAdmin
-                      ? 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+                      ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
                       : 'bg-gray-100 text-gray-500 border-gray-200'}`}
                   >
                     {user.isAdmin ? 'Revoke Admin' : 'Grant Admin'}

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Learning() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [banks, setBanks] = useState([]);
     const [selectedBank, setSelectedBank] = useState(null);
     const [questions, setQuestions] = useState([]);
@@ -78,6 +80,45 @@ export default function Learning() {
 
     const currentQuestion = filteredQuestions[currentQuestionIndex];
 
+    const renderBankCard = (bank) => {
+        const category = categories.find(c => c.id === bank.category);
+        const questionCount = JSON.parse(bank.questions || '[]').length;
+
+        return (
+            <button
+                key={bank.id}
+                onClick={() => selectBank(bank)}
+                className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-all text-left group shadow-sm hover:shadow-md"
+            >
+                <div className="flex items-center justify-between mb-4">
+                    <div className="text-3xl group-hover:scale-110 transition-transform">{category?.icon || '📝'}</div>
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${bank.isPublic ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'}`}>
+                        {bank.isPublic ? '🌐 Public' : '🔒 Private'}
+                    </div>
+                </div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-50 mb-2 truncate">
+                    {bank.name}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 h-10 overflow-hidden text-ellipsis line-clamp-2">
+                    {bank.description || 'No description provided for this bank.'}
+                </p>
+                <div className="flex items-center gap-2 mb-4 text-[10px] text-gray-500 font-medium">
+                    <span className="flex items-center gap-1 border border-gray-200 dark:border-gray-800 px-2 py-0.5 rounded transition-colors group-hover:border-gray-400 dark:group-hover:border-gray-600">
+                        👤 {(bank.isAnonymous || bank.anonymous) ? 'Anonymous' : bank.user?.email || 'Unknown'}
+                    </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 dark:text-gray-400 font-medium">
+                        {questionCount} questions
+                    </span>
+                    <span className="px-2 py-1 border border-gray-200 dark:border-gray-800 rounded font-bold text-gray-700 dark:text-gray-300">
+                        {category?.name}
+                    </span>
+                </div>
+            </button>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-white dark:bg-black py-8">
             <div className="max-w-6xl mx-auto px-4">
@@ -113,50 +154,60 @@ export default function Learning() {
                         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-6">
                             Select a Question Bank
                         </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {banks.map((bank) => {
-                                const category = categories.find(c => c.id === bank.category);
-                                const questionCount = JSON.parse(bank.questions || '[]').length;
+                        <div className="space-y-12">
+                            {/* My Private Banks Section */}
+                            {banks.filter(b => b.user?.id === user?.id && !b.isPublic).length > 0 && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">My Private Banks</h3>
+                                        <span className="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 font-bold uppercase">Personal</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {banks.filter(b => b.user?.id === user?.id && !b.isPublic).map((bank) => renderBankCard(bank))}
+                                    </div>
+                                </div>
+                            )}
 
-                                return (
-                                    <button
-                                        key={bank.id}
-                                        onClick={() => selectBank(bank)}
-                                        className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-6 hover:border-gray-400 dark:hover:border-gray-600 transition-all text-left"
-                                    >
-                                        <div className="text-3xl mb-4">{category?.icon || '📝'}</div>
-                                        <h3 className="font-semibold text-gray-900 dark:text-gray-50 mb-2">
-                                            {bank.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                            {bank.description || 'No description'}
-                                        </p>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-gray-600 dark:text-gray-400">
-                                                {questionCount} questions
-                                            </span>
-                                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-900 rounded">
-                                                {category?.name}
-                                            </span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                            {/* Public Community Banks Section */}
+                            {banks.filter(b => b.isPublic).length > 0 && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">Public Community Banks</h3>
+                                        <span className="px-2 py-0.5 rounded text-[10px] bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 font-bold uppercase">Community</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {banks.filter(b => b.isPublic).map((bank) => renderBankCard(bank))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Admin: All Other Private Banks */}
+                            {user?.isAdmin && banks.filter(b => b.user?.id !== user?.id && !b.isPublic).length > 0 && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">All Private Banks (System Admin)</h3>
+                                        <span className="px-2 py-0.5 rounded text-[10px] bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 font-bold uppercase">Admin Access</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {banks.filter(b => b.user?.id !== user?.id && !b.isPublic).map((bank) => renderBankCard(bank))}
+                                    </div>
+                                </div>
+                            )}
 
                             {banks.length === 0 && (
-                                <div className="col-span-full text-center py-12">
+                                <div className="text-center py-20 bg-gray-50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
                                     <div className="text-6xl mb-4">📚</div>
                                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-50 mb-2">
-                                        No Question Banks Yet
+                                        No Question Banks Found
                                     </h3>
-                                    <p className="text-gray-600 dark:text-gray-400 mb-6">
-                                        Create a question bank to start learning
+                                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+                                        You don't have any private banks yet, and there are no public banks available.
                                     </p>
                                     <button
                                         onClick={() => navigate('/question-banks')}
                                         className="btn btn-primary"
                                     >
-                                        Create Question Bank
+                                        Create Your First Bank
                                     </button>
                                 </div>
                             )}
@@ -371,10 +422,10 @@ export default function Learning() {
                                                                         </span>
                                                                         {q.difficulty && (
                                                                             <span className={`px-2 py-0.5 rounded text-xs font-medium ${q.difficulty === 'easy'
-                                                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                                                    : q.difficulty === 'medium'
-                                                                                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                                                                                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                                                : q.difficulty === 'medium'
+                                                                                    ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                                                                                    : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                                                                                 }`}>
                                                                                 {q.difficulty}
                                                                             </span>

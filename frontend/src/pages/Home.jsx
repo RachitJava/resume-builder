@@ -10,6 +10,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
+  const getFirstName = (email) => {
+    if (!email) return 'User';
+    const namePart = email.split('@')[0];
+    const firstMatch = namePart.match(/[a-zA-Z]+/);
+    const name = firstMatch ? firstMatch[0] : 'User';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  };
+
   useEffect(() => {
     fetchResumes();
   }, []);
@@ -50,36 +58,40 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="w-full min-h-screen bg-white dark:bg-black overflow-x-hidden touch-pan-y">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-12">
         {/* Dashboard Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-4">
-            My Dashboard
+        <div className="mb-6 md:mb-12">
+          <h1 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-2">
+            Build Resume
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
-            Welcome back, {user?.email?.split('@')[0] || 'User'}! Manage your resumes and applications.
+          <p className="text-sm md:text-lg text-gray-600 dark:text-gray-400">
+            Welcome back, {getFirstName(user?.email)}! Manage your resumes and applications.
           </p>
         </div>
 
         {/* My Resumes Section */}
-        <div className="mb-16">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <span>📄</span> My Resumes
+        <div className="mb-12 md:mb-16 overflow-hidden">
+          <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-4 mb-6 md:mb-8">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <span className="text-2xl md:text-3xl">📄</span> My Resumes
             </h2>
-            <div className="flex gap-3">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="px-6 py-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all duration-300 shadow-sm"
+                className="w-12 h-12 sm:w-auto sm:px-6 sm:py-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all duration-300 shadow-sm flex items-center justify-center gap-2 flex-shrink-0"
+                title="Upload Resume"
               >
-                📤 Upload Resume
+                <span className="text-xl">📤</span>
+                <span className="hidden sm:inline">Upload Resume</span>
               </button>
               <button
                 onClick={() => navigate('/editor')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300"
+                className="w-12 h-12 sm:w-auto sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 flex-shrink-0"
+                title="Create New Resume"
               >
-                + Create New Resume
+                <span className="text-2xl font-light">+</span>
+                <span className="hidden sm:inline">Create New Resume</span>
               </button>
             </div>
           </div>
@@ -119,54 +131,58 @@ export default function Home() {
               </p>
               <button
                 onClick={() => navigate('/editor')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300"
               >
                 Get Started
               </button>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {resumes.map((resume) => (
-                <div
-                  key={resume.id}
-                  className="group bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 hover:shadow-xl hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                        {resume.fullName || 'Untitled Resume'}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
-                        {resume.jobTitle || resume.experience?.[0]?.position || 'No title'}
-                      </p>
+            <div className="relative w-full overflow-hidden">
+              <div className="flex overflow-x-auto pb-8 gap-6 snap-x snap-mandatory scroll-smooth touch-pan-x overscroll-x-contain">
+                {resumes.map((resume) => (
+                  <div
+                    key={resume.id}
+                    className="flex-shrink-0 w-[80vw] sm:w-[320px] md:w-auto md:flex-1 md:min-w-0 snap-center group bg-white dark:bg-zinc-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-5 md:p-6 hover:shadow-2xl hover:border-blue-500 dark:hover:border-blue-500 transition-all duration-300 border-b-4 border-b-transparent hover:border-b-blue-500"
+                  >
+                    <div className="flex items-start justify-between mb-3 md:mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                          {resume.fullName || 'Untitled Resume'}
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                          {resume.jobTitle || resume.experience?.[0]?.position || 'No title'}
+                        </p>
+                      </div>
+                      <div className="w-10 h-10 md:w-12 md:h-12 border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl flex items-center justify-center text-xl md:text-2xl">
+                        📄
+                      </div>
                     </div>
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-xl flex items-center justify-center text-2xl">
-                      📄
+
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                      <span>🎨 {resume.template || 'Modern'}</span>
+                      <span>•</span>
+                      <span>📅 {new Date(resume.updatedAt || resume.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => navigate(`/editor/${resume.id}`)}
+                        className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(resume.id)}
+                        className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-300"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
-                    <span>🎨 {resume.template || 'Modern'}</span>
-                    <span>•</span>
-                    <span>📅 {new Date(resume.updatedAt || resume.createdAt).toLocaleDateString()}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => navigate(`/editor/${resume.id}`)}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(resume.id)}
-                      className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-300"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
+                {/* Extra spacer for scroll padding on mobile */}
+                <div className="flex-shrink-0 w-4 md:hidden" />
+              </div>
             </div>
           )}
         </div>

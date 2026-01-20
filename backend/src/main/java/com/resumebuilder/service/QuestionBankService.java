@@ -30,6 +30,9 @@ public class QuestionBankService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private com.resumebuilder.repository.InterviewRecordRepository interviewRecordRepository;
+
     @Value("${ai.api.url}")
     private String aiApiUrl;
 
@@ -42,7 +45,7 @@ public class QuestionBankService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<QuestionBank> getUserQuestionBanks(User user) {
-        return questionBankRepository.findByUserAndIsActiveTrueOrderByCreatedAtDesc(user);
+        return questionBankRepository.findVisibleBanks(user);
     }
 
     public List<QuestionBank> getAllQuestionBanks() {
@@ -51,8 +54,29 @@ public class QuestionBankService {
 
     public QuestionBank getQuestionBank(String id, User user) {
         Optional<QuestionBank> bank = questionBankRepository.findById(id);
-        if (bank.isPresent() && bank.get().getUser().getId().equals(user.getId())) {
-            return bank.get();
+        if (bank.isPresent()) {
+            QuestionBank qb = bank.get();
+            // Access allowed for viewing if: it's public OR user is admin OR user is owner
+            if (qb.isPublic() || user.isAdmin()
+                    || (qb.getUser() != null && qb.getUser().getId().equalsIgnoreCase(user.getId()))) {
+                return qb;
+            }
+        }
+        return null;
+    }
+
+    private QuestionBank getEditableQuestionBank(String id, User user) {
+        Optional<QuestionBank> bank = questionBankRepository.findById(id);
+        if (bank.isPresent()) {
+            QuestionBank qb = bank.get();
+            // Only owner or admin can edit
+            if (user.isAdmin() || (qb.getUser() != null && qb.getUser().getId().equalsIgnoreCase(user.getId()))) {
+                return qb;
+            }
+            System.out.println("DEBUG: User " + user.getEmail() + " is NOT authorized to edit bank " + id + " (Owner: "
+                    + (qb.getUser() != null ? qb.getUser().getEmail() : "null") + ")");
+        } else {
+            System.out.println("DEBUG: Question bank " + id + " not found in database.");
         }
         return null;
     }
@@ -64,6 +88,13 @@ public class QuestionBankService {
             bank.setName((String) request.get("name"));
             bank.setCategory((String) request.get("category"));
             bank.setDescription((String) request.getOrDefault("description", ""));
+
+            if (request.containsKey("isPublic")) {
+                bank.setPublic((Boolean) request.get("isPublic"));
+            }
+            if (request.containsKey("isAnonymous")) {
+                bank.setAnonymous((Boolean) request.get("isAnonymous"));
+            }
 
             // Convert questions list to JSON string
             Object questionsObj = request.get("questions");
@@ -77,6 +108,7 @@ public class QuestionBankService {
     }
 
     public QuestionBank createFromFile(MultipartFile file, String name, String category, String description,
+            Boolean isPublic, Boolean isAnonymous,
             User user) {
         try {
             // Extract text from file based on type
@@ -91,6 +123,12 @@ public class QuestionBankService {
             bank.setCategory(category);
             bank.setDescription(description != null ? description : "Imported from " + file.getOriginalFilename());
             bank.setQuestions(questionsJson);
+            if (isPublic != null) {
+                bank.setPublic(isPublic);
+            }
+            if (isAnonymous != null) {
+                bank.setAnonymous(isAnonymous);
+            }
 
             return questionBankRepository.save(bank);
         } catch (Exception e) {
@@ -136,7 +174,7 @@ public class QuestionBankService {
 
     public QuestionBank updateQuestionBank(String id, Map<String, Object> request, User user) {
         try {
-            QuestionBank bank = getQuestionBank(id, user);
+            QuestionBank bank = getEditableQuestionBank(id, user);
             if (bank == null) {
                 return null;
             }
@@ -157,6 +195,12 @@ public class QuestionBankService {
             if (request.containsKey("isActive")) {
                 bank.setActive((Boolean) request.get("isActive"));
             }
+            if (request.containsKey("isPublic")) {
+                bank.setPublic((Boolean) request.get("isPublic"));
+            }
+            if (request.containsKey("isAnonymous")) {
+                bank.setAnonymous((Boolean) request.get("isAnonymous"));
+            }
 
             return questionBankRepository.save(bank);
         } catch (Exception e) {
@@ -174,6 +218,40 @@ public class QuestionBankService {
         bank.setActive(false);
         questionBankRepository.save(bank);
         return true;
+    }
+
+    public void incrementUsage(String id) {
+        Optional<QuestionBank> bankOpt = questionBankRepository.findById(id);
+        if (bankOpt.isPresent()) {
+            QuestionBank bank = bankOpt.get();
+            bank.setUsageCount((bank.getUsageCount() == null ? 0 : bank.getUsageCount()) + 1);
+            questionBankRepository.save(bank);
+        }
+    }
+
+    public void logInterviewStart(User user, List<String> bankIds, String meetingId, String candidateName,
+            String candidateRole, String candidateExperience) {
+        if (bankIds == null || bankIds.isEmpty())
+            return;
+
+        // 1. Log the meeting
+        com.resumebuilder.entity.InterviewRecord record = new com.resumebuilder.entity.InterviewRecord();
+        record.setUser(user);
+        record.setQuestionBankIds(String.join(",", bankIds));
+        record.setMeetingId(meetingId);
+        record.setCandidateName(candidateName);
+        record.setCandidateRole(candidateRole);
+        record.setCandidateExperience(candidateExperience);
+        interviewRecordRepository.save(record);
+
+        // 2. Increment counts
+        for (String id : bankIds) {
+            incrementUsage(id);
+        }
+    }
+
+    public List<com.resumebuilder.entity.InterviewRecord> getAllInterviewRecords() {
+        return interviewRecordRepository.findAllByOrderByTimestampDesc();
     }
 
     private String parseQuestionsWithAI(String fileContent, String category) {

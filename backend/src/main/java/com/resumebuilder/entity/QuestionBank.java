@@ -31,6 +31,17 @@ public class QuestionBank {
     private boolean isActive = true;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
+    private boolean isPublic = false; // New: Public/Private visibility
+
+    @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty("isAnonymous")
+    private boolean isAnonymous = false; // New: Option to hide creator identity
+
+    @Column(nullable = false)
+    private Integer usageCount = 0; // New: Track how many times this bank was used
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column
@@ -104,12 +115,40 @@ public class QuestionBank {
         isActive = active;
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
+    public boolean isPublic() {
+        return isPublic;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
+    public void setPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isAnonymous")
+    public boolean isAnonymous() {
+        return isAnonymous;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isAnonymous")
+    public void setAnonymous(boolean anonymous) {
+        isAnonymous = anonymous;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Integer getUsageCount() {
+        return usageCount;
+    }
+
+    public void setUsageCount(Integer usageCount) {
+        this.usageCount = usageCount;
     }
 
     public LocalDateTime getUpdatedAt() {

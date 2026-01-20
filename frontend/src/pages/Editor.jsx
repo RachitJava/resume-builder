@@ -33,6 +33,7 @@ export default function Editor() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('form');
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isAiOpen, setIsAiOpen] = useState(false);
 
   const previewRef = useRef(null);
 
@@ -193,7 +194,20 @@ export default function Editor() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 ml-auto">
-          <div className="hidden sm:block">
+          <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={() => setIsAiOpen(!isAiOpen)}
+              className={`ai-toggle-btn flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 border ${isAiOpen
+                ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm'
+                }`}
+            >
+              <span className="text-base">✨</span>
+              <span>AI</span>
+              <svg className={`w-4 h-4 transition-transform ${isAiOpen ? 'rotate-180' : ''} ${isAiOpen ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
             <TemplateSelector
               value={resume.template}
               onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
@@ -234,11 +248,28 @@ export default function Editor() {
       {/* Mobile Template Selector Toggle (below header on mobile) */}
       <div className="sm:hidden px-4 py-2 bg-gray-50 dark:bg-black border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Template:</span>
-          <TemplateSelector
-            value={resume.template}
-            onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Assistant:</span>
+            <button
+              onClick={() => setIsAiOpen(!isAiOpen)}
+              className={`ai-toggle-btn flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 border ${isAiOpen
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300'
+                }`}
+            >
+              <span>✨ AI</span>
+              <svg className={`w-3 h-3 transition-transform ${isAiOpen ? 'rotate-180' : ''} ${isAiOpen ? 'text-white' : 'text-gray-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Style:</span>
+            <TemplateSelector
+              value={resume.template}
+              onChange={(t) => setResume(prev => ({ ...prev, template: t }))}
+            />
+          </div>
         </div>
       </div>
 
@@ -283,7 +314,12 @@ export default function Editor() {
       </div>
 
       {/* AI Assistant Chat Bot */}
-      <AiAssistant currentResume={resume} onUpdateResume={setResume} />
+      <AiAssistant
+        currentResume={resume}
+        onUpdateResume={setResume}
+        isOpen={isAiOpen}
+        setIsOpen={setIsAiOpen}
+      />
 
       {/* PDF Download Loader Overlay */}
       {downloadProgress > 0 && (

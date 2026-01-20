@@ -15,7 +15,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/welcome';
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -93,8 +93,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-50 dark:bg-black font-body">
       {/* Dynamic Background Blurs */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-blue-500/20 blur-[100px] opacity-50 dark:opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-purple-500/20 blur-[100px] opacity-50 dark:opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[100px] opacity-50 dark:opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-blue-400/10 blur-[100px] opacity-50 dark:opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       <div className="w-full max-w-md p-6 relative z-10">

@@ -110,9 +110,9 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
     };
 
     return (
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-2xl p-6 mb-6">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-6 mb-6">
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center text-2xl">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl">
                     🎙️
                 </div>
                 <div>
@@ -144,7 +144,7 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                         checked={profile.enableVoice}
                         onChange={(e) => setProfile({ ...profile, enableVoice: e.target.checked })}
                         className="w-12 h-6 rounded-full appearance-none cursor-pointer transition-all duration-300 relative
-                                 checked:bg-gradient-to-r checked:from-purple-600 checked:to-pink-600
+                                 checked:bg-blue-600
                                  bg-gray-300 dark:bg-gray-700
                                  before:content-[''] before:absolute before:w-5 before:h-5 before:rounded-full before:bg-white
                                  before:top-0.5 before:left-0.5 before:transition-all before:duration-300
@@ -169,8 +169,8 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                                     interviewerVoice: voiceOptions[profile.interviewerAccent].female[0].id
                                 })}
                                 className={`p-4 rounded-xl border-2 transition-all ${profile.interviewerGender === 'female'
-                                    ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
-                                    : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
                                     }`}
                             >
                                 <div className="text-4xl mb-2">👩‍💼</div>
@@ -184,8 +184,8 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                                     interviewerVoice: voiceOptions[profile.interviewerAccent].male[0].id
                                 })}
                                 className={`p-4 rounded-xl border-2 transition-all ${profile.interviewerGender === 'male'
-                                    ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
-                                    : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
                                     }`}
                             >
                                 <div className="text-4xl mb-2">👨‍💼</div>
@@ -210,8 +210,8 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                                         interviewerVoice: accent[profile.interviewerGender][0].id
                                     })}
                                     className={`p-3 rounded-xl border-2 transition-all text-left ${profile.interviewerAccent === code
-                                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
-                                        : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                                        : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
                                         }`}
                                 >
                                     <div className="text-2xl mb-1">{accent.flag}</div>
@@ -235,8 +235,8 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                                     type="button"
                                     onClick={() => setProfile({ ...profile, interviewerVoice: voice.id })}
                                     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${profile.interviewerVoice === voice.id
-                                        ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30'
-                                        : 'border-gray-200 dark:border-gray-800 hover:border-purple-300'
+                                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                                        : 'border-gray-200 dark:border-gray-800 hover:border-blue-300'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -254,7 +254,7 @@ export default function VirtualInterviewerConfig({ profile, setProfile }) {
                                                 e.stopPropagation();
                                                 playVoicePreview(voice.id);
                                             }}
-                                            className="ml-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
+                                            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:shadow-lg transition-all"
                                         >
                                             {playingVoiceId === voice.id ? '⏹️ Stop' : '▶️ Preview'}
                                         </button>

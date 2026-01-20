@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import resumeApi from '../api/resumeApi';
 
-const AiAssistant = ({ currentResume, onUpdateResume }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const AiAssistant = ({ currentResume, onUpdateResume, isOpen: externalIsOpen, setIsOpen: setExternalIsOpen }) => {
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+    // Support both controlled and uncontrolled modes
+    const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+    const setIsOpen = setExternalIsOpen !== undefined ? setExternalIsOpen : setInternalIsOpen;
+
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hi! I can help you improve your resume. Ask me to add experience, fix grammar, or suggest skills!' }
     ]);
@@ -10,7 +15,6 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const chatRef = useRef(null);
-    const toggleRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -24,9 +28,12 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
         const handleClickOutside = (event) => {
             if (isOpen &&
                 chatRef.current &&
-                !chatRef.current.contains(event.target) &&
-                toggleRef.current &&
-                !toggleRef.current.contains(event.target)) {
+                !chatRef.current.contains(event.target)) {
+
+                // If the click was on a toggle button, let the toggle button's onClick handle it
+                // We check if the click target has 'ai-toggle-btn' class or is inside such a button
+                if (event.target.closest('.ai-toggle-btn')) return;
+
                 setIsOpen(false);
             }
         };
@@ -77,37 +84,37 @@ const AiAssistant = ({ currentResume, onUpdateResume }) => {
 
     return (
         <>
-            {/* Floating Toggle Button */}
-            <button
-                ref={toggleRef}
-                onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-20 right-6 z-50 p-4 rounded-full shadow-xl transition-all duration-300 ${isOpen ? 'bg-red-500 rotate-45' : 'bg-blue-600 hover:bg-blue-700'
-                    } text-white`}
-            >
-                {isOpen ? (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                ) : (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                )}
-            </button>
+            {/* Backdrop for click-outside */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/5 md:bg-transparent"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
 
             {/* Chat Panel */}
             <div
                 ref={chatRef}
-                className={`fixed bottom-36 right-6 w-96 max-w-[90vw] bg-white dark:bg-black rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-300 transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-10 pointer-events-none'
-                    } z-40 flex flex-col`}
-                style={{ height: 'min(500px, 80vh)' }}
+                className={`fixed top-20 right-4 md:right-8 w-[400px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-[2rem] shadow-2xl border border-gray-200 dark:border-gray-800 transition-all duration-500 transform origin-top-right ${isOpen ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-8 opacity-0 scale-95 pointer-events-none'
+                    } z-[60] flex flex-col overflow-hidden`}
+                style={{ height: 'min(600px, 75vh)' }}
             >
                 {/* Header */}
-                <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 rounded-t-2xl flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <span className="text-xl">🤖</span> AI Resume Assistant
-                    </h3>
-                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">Beta</span>
+                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1C1C1F] flex justify-between items-center">
+                    <div className="flex flex-col">
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            <span className="text-lg">✨</span> AI Assistant
+                        </h3>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black mt-0.5">Powered by Rachit Intelligence</p>
+                    </div>
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-400"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 {/* Messages */}

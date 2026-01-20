@@ -22,6 +22,7 @@ public class AiInterviewService {
     private final QuestionBankRepository questionBankRepository;
     private final AiSettingsService aiSettingsService;
     private final AiProviderConfigRepository aiProviderConfigRepository;
+    private final ElevenLabsService elevenLabsService;
 
     @Value("${ai.api.url:https://api.groq.com/openai/v1/chat/completions}")
     private String defaultAiApiUrl;
@@ -185,7 +186,13 @@ public class AiInterviewService {
                 shouldEnd = conversationHistory != null && conversationHistory.size() >= 16;
             }
 
-            return Map.of("response", aiResponse, "shouldEnd", shouldEnd);
+            // Generate Audio (ElevenLabs)
+            String audioUrl = null;
+            if (aiResponse != null && !aiResponse.isEmpty()) {
+                audioUrl = elevenLabsService.generateAudio(aiResponse);
+            }
+
+            return Map.of("response", aiResponse, "audioUrl", audioUrl != null ? audioUrl : "", "shouldEnd", shouldEnd);
 
         } catch (Exception e) {
             log.error("Interview Generation Error", e);
@@ -294,7 +301,10 @@ public class AiInterviewService {
         }
 
         prompt.append("5. **Tone:** Be human, warm, encouraging, and professional. Avoid robotic repetition.\n");
-        prompt.append("6. **Length:** Keep your responses concise (2-3 sentences max).\n");
+        prompt.append(
+                "6. **Length:** Keep your responses EXTREMELY concise (1-2 sentences max) to ensure a fast, interactive pace.\n");
+        prompt.append(
+                "8. **Names:** Address the candidate by their First Name ONLY (e.g., 'Rachit', not 'Rachit Bishnoi').\n");
 
         return prompt.toString();
     }

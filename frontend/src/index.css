@@ -8,9 +8,16 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  @apply overflow-x-hidden;
+  width: 100%;
+  position: relative;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  @apply bg-white dark:bg-black text-gray-900 dark:text-gray-50 min-h-screen overflow-x-hidden;
+  @apply bg-white dark:bg-black text-gray-900 dark:text-gray-50 min-h-screen;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
